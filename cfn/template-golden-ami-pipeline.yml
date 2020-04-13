@@ -1,0 +1,439 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "CloudRIG AWS AMI Factory"
+Parameters:
+  ArtefactsS3BucketName:
+    Type: String
+    Default: "cloudrig-amifactory"
+
+  Version:
+    Type: String
+    Default: v1.0
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-05602663
+    Description: The subnet where the built instances are going to be launched (shoud have internet access)
+
+Resources:
+
+  #
+  #
+  #   IAM
+  #
+  #
+
+  BuildAMIInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      RoleName: "cloudrig-amifactory-instance-profile"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: allow-to-download-cloudrig-artifacts
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - s3:GetObject
+                Resource:
+                - 'arn:aws:s3:::cloudrig-amifactory/*'
+        - PolicyName: allow-to-download-aws-windows-artifacts
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}/*'
+        - PolicyName: allow-to-log
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !GetAtt BuildAMILogs.Arn
+
+  BuildAMIInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref BuildAMIInstanceRole
+      InstanceProfileName: "cloudrig-amifactory-instance-profile"
+
+  BuildAMIAutomationServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "cloudrig-amifactory-automation"
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+      Policies:
+        - PolicyName: manage-resources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                Resource:
+                  - "*"
+        - PolicyName: pass-instance-profile-to-instances
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt BuildAMIInstanceRole.Arn
+
+  #
+  #
+  #  LOGS
+  #
+  #
+
+  BuildAMILogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/cloudrig/amifactory/pipeline/v${Version}"
+
+  #
+  #
+  #  SSM AUTOMATION
+  #
+  #
+
+  BuildAMISSMAutomation:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Tags:
+        - Key: cloudrig
+          Value: 'true'
+      Content:
+        schemaVersion: '0.3'
+        description: CloudRIG - AMI building pipeline automation
+        assumeRole: "{{ AutomationAssumeRole }}"
+        parameters:
+          ArtefactsS3BucketName:
+            type: String
+            description: "Specify the SubnetId if you want to launch into a specific subnet."
+            default: !Ref "ArtefactsS3BucketName"
+          Version:
+            type: String
+            description: "Specify the version that you want to build"
+            default: !Ref "Version"
+          SourceAmiId:
+            type: String
+            description: "The source AMI ID."
+            default: "{{ssm:/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base}}"
+          IamInstanceProfileName:
+            type: String
+            description: "The name of the role that enables Systems Manager to manage the instance."
+            default: !Ref BuildAMIInstanceProfile
+          AutomationAssumeRole:
+            type: String
+            description: "The ARN of the role that allows Automation to perform the actions on your behalf."
+            default: !GetAtt BuildAMIAutomationServiceRole.Arn
+          TargetAmiNamePrefix:
+            type: String
+            description: "The name of the new AMI that will be created. Default
+              is a system-generated string including the source AMI id, and the creation time
+              and date."
+            default: "cloudrig-{{global:DATE_TIME}}-"
+          InstanceType:
+            type: String
+            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
+            default: g2.2xlarge
+          SubnetId:
+            type: String
+            description: "Specify the SubnetId if you want to launch into a specific subnet."
+            default: !Ref SubnetId
+          AdditionalTargetRegions:
+            type: StringList
+            description: "The list of regions where the image should be copied"
+            minItems: 0
+            default: ["eu-central-1","us-east-1"]
+          CommandOutputLogGroupName:
+            type: String
+            description: "The name of the log group that will aggregate the build logs"
+            default: !Ref BuildAMILogs
+        mainSteps:
+          - name: LaunchInstance
+            action: aws:runInstances
+            timeoutSeconds: 1800
+            maxAttempts: 3
+            onFailure: Abort
+            inputs:
+              ImageId: "{{ SourceAmiId  }}"
+              InstanceType: "{{ InstanceType }}"
+              MinInstanceCount: 1
+              MaxInstanceCount: 1
+              IamInstanceProfileName: "{{ IamInstanceProfileName }}"
+              SubnetId: "{{ SubnetId }}"
+
+          # Install the NVIDIA drivers for this machine
+          - name: InstallParsecPreparationTool
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 14400
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                commands:
+                  - $ErrorActionPreference = "Stop"
+                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
+                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
+                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
+                  - powershell.exe -File "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\Loader.ps1"
+                  - Remove-Item –path "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool" –recurse
+
+          # Update the EC2 Config
+          - name: UpdateEC2Config
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 7200
+            inputs:
+              DocumentName: AWS-InstallPowerShellModule
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                executionTimeout: '7200'
+                source: https://aws-ssm-downloads-{{global:REGION}}.s3.amazonaws.com/PSModules/AWSUpdateWindowsInstance/Latest/AWSUpdateWindowsInstance.zip
+                sourceHash: 14CAD416F4A054894EBD2091EA4B99E542368BE5895BDD466B567C1ABA87C87C
+                commands:
+                  - Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force
+                  - Import-Module AWSUpdateWindowsInstance
+                  - if ([Environment]::OSVersion.Version.Major -ge 10) {
+                  - "  Install-AwsUwiEC2Launch -Id {{ automation:EXECUTION_ID }}"
+                  - "} else {"
+                  - "  Install-AwsUwiEC2Config -Id {{ automation:EXECUTION_ID }}"
+                  - "}"
+
+          # Update the SSM Agent (downgrade not allowed)
+          - name: UpdateSSMAgent
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWS-UpdateSSMAgent
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                allowDowngrade: 'false'
+
+          # Upgrade some drivers
+          - name: UpdateAWSPVDriver
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWS-ConfigureAWSPackage
+              InstanceIds:
+                - "{{LaunchInstance.InstanceIds}}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                name: AWSPVDriver
+                action: Install
+
+          - name: UpdateAWSEnaNetworkDriver
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWS-ConfigureAWSPackage
+              InstanceIds:
+                - "{{LaunchInstance.InstanceIds}}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                name: AwsEnaNetworkDriver
+                action: Install
+
+          - name: UpdateAWSNVMe
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWS-ConfigureAWSPackage
+              InstanceIds:
+                - "{{LaunchInstance.InstanceIds}}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                name: AWSNVMe
+                action: Install
+
+          # Install the Windows Updates
+          - name: InstallWindowsUpdates
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 14400
+            inputs:
+              DocumentName: AWS-InstallWindowsUpdates
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                Action: Install
+
+          # Sysprem the instance
+          - name: RunSysprepGeneralize
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWSEC2-RunSysprep
+              InstanceIds:
+                - "{{LaunchInstance.InstanceIds}}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                Id: "{{automation:EXECUTION_ID}}"
+
+          - name: StopInstance
+            action: aws:changeInstanceState
+            maxAttempts: 3
+            timeoutSeconds: 7200
+            onFailure: Abort
+            inputs:
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CheckStateOnly: false
+              DesiredState: stopped
+
+          - name: CreateImage
+            action: aws:createImage
+            maxAttempts: 3
+            onFailure: Abort
+            inputs:
+              InstanceId: "{{ LaunchInstance.InstanceIds }}"
+              ImageName: "{{ TargetAmiNamePrefix }}-{{ InstanceType }}"
+              NoReboot: true
+              ImageDescription: !Sub "CloudRIG gaming image v${Version}"
+
+          - name: CreateTagsForImage
+            action: aws:createTags
+            maxAttempts: 1
+            onFailure: Continue
+            inputs:
+              ResourceType: EC2
+              ResourceIds:
+                - "{{CreateImage.ImageId}}"
+              Tags:
+                - Key: Automation-Id
+                  Value: "{{automation:EXECUTION_ID}}"
+                - Key: cloudrig
+                  Value: true
+                - Key: SourceAMI
+                  Value: "{{SourceAmiId}}"
+                - Key: Amazon-Inspector
+                  Value: 'true'
+                - Key: Amazon-SSM
+                  Value: 'true'
+
+          - name: TerminateInstance
+            action: aws:changeInstanceState
+            maxAttempts: 3
+            onFailure: Abort
+            isEnd: true
+            inputs:
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              DesiredState: terminated
+
+          - name: VerifyImageAvailability
+            action: aws:waitForAwsResourceProperty
+            timeoutSeconds: 600
+            inputs:
+              Service: ec2
+              Api: DescribeImages
+              ImageIds:
+                - "{{ CreateImage.ImageId }}"
+              PropertySelector: "$.Images[0].State"
+              DesiredValues:
+                - available
+
+          - name: CopyImageInRegions
+            action: aws:executeScript
+            timeoutSeconds: 45
+            onFailure: Abort
+            inputs:
+              Runtime: python3.7
+              Handler: copyImageInAllRegions
+              InputPayload:
+                ImageId: "{{ CreateImage.ImageId }}"
+                ImageName: "{{ TargetAmiNamePrefix }}-{{ InstanceType }}"
+                Regions: "{{ AdditionalTargetRegions }}"
+              Script: |-
+                import boto3
+                def crossRegionImageCopy(events,context):
+                  newImageId = events['ImageId']
+                  newImageName = events['ImageName']
+                  for region in events['Regions']:
+                    #Initialize client
+                    ec2 = boto3.client('ec2', region_name=region)
+
+                    ec2.copy_image(
+                      Name=newImageName,
+                      SourceImageId=newImageId,
+                      SourceRegion='eu-west-1'
+                    )
+
+        outputs:
+          - CreateImage.ImageId
