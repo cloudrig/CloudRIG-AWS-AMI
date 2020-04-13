@@ -402,7 +402,6 @@ Resources:
             action: aws:changeInstanceState
             maxAttempts: 3
             onFailure: Abort
-            isEnd: true
             inputs:
               InstanceIds:
                 - "{{ LaunchInstance.InstanceIds }}"
@@ -424,6 +423,7 @@ Resources:
             action: aws:executeScript
             timeoutSeconds: 45
             onFailure: Abort
+            isEnd: true
             inputs:
               Runtime: python3.7
               Handler: copyImageInAllRegions
