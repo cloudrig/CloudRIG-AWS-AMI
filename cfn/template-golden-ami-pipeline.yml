@@ -169,6 +169,10 @@ Resources:
             type: String
             description: "The source AMI ID."
             default: "{{ssm:/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base}}"
+          SourceOSName:
+            type: String
+            description: "The source AMI OS short name"
+            default: "win16full"
           IamInstanceProfileName:
             type: String
             description: "The name of the role that enables Systems Manager to manage the instance."
@@ -177,12 +181,6 @@ Resources:
             type: String
             description: "The ARN of the role that allows Automation to perform the actions on your behalf."
             default: !GetAtt BuildAMIAutomationServiceRole.Arn
-          TargetAmiNamePrefix:
-            type: String
-            description: "The name of the new AMI that will be created. Default
-              is a system-generated string including the source AMI id, and the creation time
-              and date."
-            default: "cloudrig-{{global:DATE_TIME}}-"
           InstanceType:
             type: String
             description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
@@ -376,9 +374,9 @@ Resources:
             onFailure: Abort
             inputs:
               InstanceId: "{{ LaunchInstance.InstanceIds }}"
-              ImageName: "{{ TargetAmiNamePrefix }}-{{ InstanceType }}"
-              NoReboot: true
-              ImageDescription: !Sub "CloudRIG gaming image v${Version}"
+              ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE }}"
+              NoReboot: false
+              ImageDescription: !Sub "CloudRIG gaming image for {{ InstanceType }} based on {{ SourceOSName }} v${Version}"
 
           - name: CreateTagsForImage
             action: aws:createTags
@@ -387,18 +385,18 @@ Resources:
             inputs:
               ResourceType: EC2
               ResourceIds:
-                - "{{CreateImage.ImageId}}"
+                - "{{ CreateImage.ImageId }}"
               Tags:
-                - Key: Automation-Id
-                  Value: "{{automation:EXECUTION_ID}}"
-                - Key: cloudrig
-                  Value: true
-                - Key: SourceAMI
-                  Value: "{{SourceAmiId}}"
-                - Key: Amazon-Inspector
-                  Value: 'true'
-                - Key: Amazon-SSM
-                  Value: 'true'
+                - Key: cloudrig:ami:automation:id
+                  Value: "{{ automation:EXECUTION_ID }}"
+                - Key: cloudrig:ami:automation:execution-time
+                  Value: "{{ global:DATE_TIME }}"
+                - Key: cloudrig:ami:source-ami-id
+                  Value: "{{ SourceAmiId }}"
+                - Key: cloudrig:ami:compatibility:instance-type
+                  Value: "{{ InstanceType }}"
+                - Key: cloudrig:ami:compatibility:os
+                  Value: "{{ SourceOSName }}"
 
           - name: TerminateInstance
             action: aws:changeInstanceState
