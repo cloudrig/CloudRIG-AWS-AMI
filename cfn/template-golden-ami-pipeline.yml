@@ -114,6 +114,19 @@ Resources:
                   - iam:PassRole
                 Resource:
                   - !GetAtt BuildAMIInstanceRole.Arn
+        - PolicyName: allow-to-log
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:DescribeLogGroups"
+                  - "logs:DescribeLogStreams"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !GetAtt BuildAMILogs.Arn
 
   #
   #
@@ -190,7 +203,7 @@ Resources:
         mainSteps:
           - name: LaunchInstance
             action: aws:runInstances
-            timeoutSeconds: 1800
+            timeoutSeconds: 600
             maxAttempts: 3
             onFailure: Abort
             inputs:
@@ -201,34 +214,12 @@ Resources:
               IamInstanceProfileName: "{{ IamInstanceProfileName }}"
               SubnetId: "{{ SubnetId }}"
 
-          # Install the NVIDIA drivers for this machine
-          - name: InstallParsecPreparationTool
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:TerminateInstance"
-            timeoutSeconds: 14400
-            inputs:
-              DocumentName: AWS-RunPowerShellScript
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                commands:
-                  - $ErrorActionPreference = "Stop"
-                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
-                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
-                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
-                  - powershell.exe -File "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\Loader.ps1"
-                  - Remove-Item –path "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool" –recurse
-
           # Update the EC2 Config
           - name: UpdateEC2Config
             action: aws:runCommand
             maxAttempts: 3
             onFailure: "step:TerminateInstance"
-            timeoutSeconds: 7200
+            timeoutSeconds: 600
             inputs:
               DocumentName: AWS-InstallPowerShellModule
               InstanceIds:
@@ -329,6 +320,28 @@ Resources:
                 CloudWatchOutputEnabled: true
               Parameters:
                 Action: Install
+
+          # Install the parsec preparation package (GPU updater...)
+          - name: InstallParsecPreparationTool
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                commands:
+                  - $ErrorActionPreference = "Stop"
+                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
+                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
+                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
+                  - powershell.exe -File "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\Loader.ps1"
+
 
           # Sysprem the instance
           - name: RunSysprepGeneralize
