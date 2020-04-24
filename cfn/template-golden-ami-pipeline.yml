@@ -15,6 +15,16 @@ Parameters:
     Default: subnet-05602663
     Description: The subnet where the built instances are going to be launched (shoud have internet access)
 
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup:Id
+    Default: sg-017829f9a8a0fea6d
+    Description: The SecurityGroup associated to the build instance
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: CloudRIG-MacBookAir2010
+    Description: The KeyPair that will be associated to the build instance (used to install parsec tools manually)
+
 Resources:
 
   #
@@ -68,8 +78,7 @@ Resources:
                   - "logs:DescribeLogGroups"
                   - "logs:DescribeLogStreams"
                   - "logs:PutLogEvents"
-                Resource:
-                  - !GetAtt BuildAMILogs.Arn
+                Resource: "*"
 
   BuildAMIInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -125,8 +134,7 @@ Resources:
                   - "logs:DescribeLogGroups"
                   - "logs:DescribeLogStreams"
                   - "logs:PutLogEvents"
-                Resource:
-                  - !GetAtt BuildAMILogs.Arn
+                Resource: '*'
 
   #
   #
@@ -185,10 +193,18 @@ Resources:
             type: String
             description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
             default: g2.2xlarge
+          KeyPairName:
+            type: String
+            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
+            default: !Ref KeyPairName
           SubnetId:
             type: String
             description: "Specify the SubnetId if you want to launch into a specific subnet."
             default: !Ref SubnetId
+          SecurityGroupId:
+            type: String
+            description: "Specify the SecurityGroupId for the instance"
+            default: !Ref SecurityGroupId
           AdditionalTargetRegions:
             type: StringList
             description: "The list of regions where the image should be copied"
@@ -202,7 +218,7 @@ Resources:
           - name: LaunchInstance
             action: aws:runInstances
             timeoutSeconds: 600
-            maxAttempts: 3
+            maxAttempts: 2
             onFailure: Abort
             inputs:
               ImageId: "{{ SourceAmiId  }}"
@@ -211,6 +227,43 @@ Resources:
               MaxInstanceCount: 1
               IamInstanceProfileName: "{{ IamInstanceProfileName }}"
               SubnetId: "{{ SubnetId }}"
+              SecurityGroupId: "{{ SecurityGroupId }}"
+              KeyName: "{{ KeyPairName }}"
+
+          # Install the parsec preparation package (GPU updater...)
+          # This does not work as SSM is running scripts as NT AUTHORITY\SYSTEM and I didn't manage
+          # to run scripts as Administrator :/
+          # - name: InstallParsecPreparationTool
+          #   action: aws:runCommand
+          #   maxAttempts: 1
+          #   onFailure: "step:TerminateInstance"
+          #   timeoutSeconds: 3600
+          #   inputs:
+          #     DocumentName: AWS-RunPowerShellScript
+          #     InstanceIds:
+          #       - "{{ LaunchInstance.InstanceIds }}"
+          #     CloudWatchOutputConfig:
+          #       CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+          #       CloudWatchOutputEnabled: true
+          #     Parameters:
+          #       commands:
+          #         - $ErrorActionPreference = "Stop"
+          #         - '[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
+          #         - '$ENV:UserProfile = "C:\Users\Administrator"'
+          #         - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
+          #         - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
+          #         - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
+          #         - '& ".\Loader.ps1"'
+
+          # Wait until the tools have been installed manually (through RDP)
+          - name: ApproveWhenParsecToolsHasBeenManuallyInstalled
+            action: aws:approve
+            timeoutSeconds: 3600
+            onFailure: Abort
+            inputs:
+              MinRequiredApprovals: 1
+              Approvers:
+              - !Sub "arn:aws:iam::${AWS::AccountId}:root"
 
           # Update the EC2 Config
           - name: UpdateEC2Config
@@ -319,28 +372,6 @@ Resources:
               Parameters:
                 Action: Install
 
-          # Install the parsec preparation package (GPU updater...)
-          - name: InstallParsecPreparationTool
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:TerminateInstance"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-RunPowerShellScript
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                commands:
-                  - $ErrorActionPreference = "Stop"
-                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
-                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
-                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
-                  - powershell.exe -File "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\Loader.ps1"
-
-
           # Sysprem the instance
           - name: RunSysprepGeneralize
             action: aws:runCommand
@@ -429,7 +460,7 @@ Resources:
               Handler: copyImageInAllRegions
               InputPayload:
                 ImageId: "{{ CreateImage.ImageId }}"
-                ImageName: "{{ TargetAmiNamePrefix }}-{{ InstanceType }}"
+                ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE }}"
                 Regions: "{{ AdditionalTargetRegions }}"
               Script: |-
                 import boto3

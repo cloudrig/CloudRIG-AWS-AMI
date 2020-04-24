@@ -30,8 +30,7 @@ done
 cp -r cfn dist/cfn
 
 mkdir -p dist/parsec-cloud-preparation-tool
-wget https://github.com/jamesstringerparsec/Parsec-Cloud-Preparation-Tool/archive/master.zip -O dist/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip
-
+wget https://github.com/cloudrig/Parsec-Cloud-Preparation-Tool/archive/master.zip -O dist/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip
 
 #
 #  Deploy
