@@ -16,7 +16,7 @@ Parameters:
     Description: The subnet where the built instances are going to be launched (shoud have internet access)
 
   SecurityGroupId:
-    Type: AWS::EC2::SecurityGroup:Id
+    Type: AWS::EC2::SecurityGroup::Id
     Default: sg-017829f9a8a0fea6d
     Description: The SecurityGroup associated to the build instance
 
@@ -227,43 +227,61 @@ Resources:
               MaxInstanceCount: 1
               IamInstanceProfileName: "{{ IamInstanceProfileName }}"
               SubnetId: "{{ SubnetId }}"
-              SecurityGroupId: "{{ SecurityGroupId }}"
+              SecurityGroupIds:
+              - "{{ SecurityGroupId }}"
               KeyName: "{{ KeyPairName }}"
 
-          # Install the parsec preparation package (GPU updater...)
-          # This does not work as SSM is running scripts as NT AUTHORITY\SYSTEM and I didn't manage
-          # to run scripts as Administrator :/
-          # - name: InstallParsecPreparationTool
-          #   action: aws:runCommand
-          #   maxAttempts: 1
-          #   onFailure: "step:TerminateInstance"
-          #   timeoutSeconds: 3600
-          #   inputs:
-          #     DocumentName: AWS-RunPowerShellScript
-          #     InstanceIds:
-          #       - "{{ LaunchInstance.InstanceIds }}"
-          #     CloudWatchOutputConfig:
-          #       CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-          #       CloudWatchOutputEnabled: true
-          #     Parameters:
-          #       commands:
-          #         - $ErrorActionPreference = "Stop"
-          #         - '[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
-          #         - '$ENV:UserProfile = "C:\Users\Administrator"'
-          #         - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
-          #         - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
-          #         - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
-          #         - '& ".\Loader.ps1"'
+          # Disable the UAC to avoid disturbing the installations
+          - name: DisableUAC
+            action: aws:runCommand
+            maxAttempts: 1
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 3600
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                commands:
+                  - 'New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force'
 
-          # Wait until the tools have been installed manually (through RDP)
-          - name: ApproveWhenParsecToolsHasBeenManuallyInstalled
-            action: aws:approve
+          # Reboot to take into account the changes
+          - name: Reboot
+            action: aws:executeAutomation
+            maxAttempts: 3
             timeoutSeconds: 3600
             onFailure: Abort
             inputs:
-              MinRequiredApprovals: 1
-              Approvers:
-              - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+              DocumentName: AWS-RestartEC2Instance
+              RuntimeParameters:
+                InstanceId:
+                  - "{{ LaunchInstance.InstanceIds }}"
+
+          # Install the parsec preparation package (GPU updater...)
+          - name: InstallParsecPreparationTool
+            action: aws:runCommand
+            maxAttempts: 1
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 3600
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                commands:
+                  - $ErrorActionPreference = "Stop"
+                  - '[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
+                  - '$ENV:UserProfile = "C:\Users\Administrator"'
+                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
+                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
+                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
+                  - '& ".\Loader.ps1"'
 
           # Update the EC2 Config
           - name: UpdateEC2Config
@@ -371,6 +389,23 @@ Resources:
                 CloudWatchOutputEnabled: true
               Parameters:
                 Action: Install
+
+          # Disable the UAC to avoid disturbing the installations
+          - name: ActivateUAC
+            action: aws:runCommand
+            maxAttempts: 1
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 3600
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                commands:
+                  - 'New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 1 -Force'
 
           # Sysprem the instance
           - name: RunSysprepGeneralize
