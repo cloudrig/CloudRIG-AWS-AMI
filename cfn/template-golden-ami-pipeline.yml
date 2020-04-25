@@ -64,9 +64,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - s3:GetObject
+                  - s3:*
                 Resource:
                   - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}/*'
+                  - 'arn:aws:s3:::nvidia-gaming/*'
         - PolicyName: allow-to-log
           PolicyDocument:
             Version: 2012-10-17
@@ -277,11 +278,11 @@ Resources:
                 commands:
                   - $ErrorActionPreference = "Stop"
                   - '[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
-                  - '$ENV:UserProfile = "C:\Users\Administrator"'
-                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip" -LocalFile "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip"
-                  - Expand-Archive "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool.zip" -DestinationPath "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool"
-                  - cd "$ENV:UserProfile\Downloads\Parsec-Cloud-Preparation-Tool\Parsec-Cloud-Preparation-Tool-master\"
-                  - '& ".\Loader.ps1"'
+                  - 'New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null'
+                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
+                  - Expand-Archive "C:\CloudRIGTemp\cloudrig-windows-install.zip" -DestinationPath "C:\CloudRIGTemp\cloudrig-windows-install\"
+                  - cd "C:\CloudRIGTemp\cloudrig-windows-install\"
+                  - '& ".\SSMLoader.ps1"'
 
           # Update the EC2 Config
           - name: UpdateEC2Config

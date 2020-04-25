@@ -27,10 +27,20 @@ done
 #
 #  Package
 #
+#  - templates
 cp -r cfn dist/cfn
 
-mkdir -p dist/parsec-cloud-preparation-tool
-wget https://github.com/cloudrig/Parsec-Cloud-Preparation-Tool/archive/master.zip -O dist/parsec-cloud-preparation-tool/Parsec-Cloud-Preparation-Tool.zip
+#  - CloudRIG Windows install scripts
+mkdir -p dist/cloudrig-windows-install/
+cp -r scripts/ dist/cloudrig-windows-install/
+(
+  set -e
+  cd dist/cloudrig-windows-install/
+  zip -r cloudrig-windows-install.zip *
+  cd ..
+  mv cloudrig-windows-install/cloudrig-windows-install.zip .
+  rm -rf cloudrig-windows-install/
+)
 
 #
 #  Deploy
