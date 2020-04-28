@@ -7,6 +7,17 @@ to make your life easier.
                     
 It's provided with no warranty, so use it at your own risk.
 
+## Installation
+
+$ErrorActionPreference = "Stop"
+'[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
+'New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null'
+Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
+Expand-Archive "C:\CloudRIGTemp\cloudrig-windows-install.zip" -DestinationPath "C:\CloudRIGTemp\cloudrig-windows-install\"
+cd "C:\CloudRIGTemp\cloudrig-windows-install\"
+'& ".\Loader.ps1"'
+
+
 This tool supports:
 
 ### OS:
@@ -25,7 +36,7 @@ Google P4 VW      (Tesla P4 with Virtual Workstation Driver)
 Google T4 VW      (Tesla T4 with Virtual Workstation Driver)  
 
 ### RDP:  
-Only use RDP to intially setup the instance. Parsec and RDP are not compatible (especially if you use RDP to log in). The Parsec UI will not be visible to you if you use RDP to log in, unless you open Parsec Service Manager located on the desktop.  Always use the auto logon tool to make the machine log in automatically, and use VNC/Teamviewer for management if required.  
+Only use RDP to intially setup the instance. Rainway and RDP are not compatible (especially if you use RDP to log in). The Parsec UI will not be visible to you if you use RDP to log in, unless you open Parsec Service Manager located on the desktop.  Always use the auto logon tool to make the machine log in automatically, and use VNC/Teamviewer for management if required.  
 
 ### VNC:
 AWS, Azure and Google machines will be automatically installed with VNC for troubleshooting purposes. VNC runs with elevated privileges and is able to function in certain situations where Parsec cannot. VNC uses port TCP 5900 (which you will need to manually enable in your instance security group settings), and has a default password of 4ubg9sde. If you open port 5900, make sure to only allow connections to port 5900 from your IP, and change the default password immediately on login — please do these two things. It’s a major security risk if you don’t.

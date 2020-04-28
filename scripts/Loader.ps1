@@ -46,7 +46,7 @@ $pinfo.Verb = 'RunAs'
 $pinfo.RedirectStandardError = $true
 $pinfo.RedirectStandardOutput = $true
 $pinfo.UseShellExecute = $false
-$pinfo.Arguments = "-file $path\CloudRIGTemp\Installer.ps1"
+$pinfo.Arguments = "-file $path\CloudRIGTemp\Installer.ps1 "
 $p = New-Object System.Diagnostics.Process
 $p.StartInfo = $pinfo
 $p.Start()

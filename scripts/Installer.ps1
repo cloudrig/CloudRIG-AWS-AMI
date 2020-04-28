@@ -97,207 +97,268 @@ Stop-Process -Name Explorer -Force
 
 #download-files-S3
 function download-resources {
-Write-Output "Downloading tools..."
-Write-Host "Downloading DirectX" -NoNewline
-(New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\CloudRIGTemp\Apps\directx_Jun2010_redist.exe")
-Write-host "`  - Success!"
-Write-Host "Downloading GPU Update tool" -NoNewline
-(New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1")
-Write-host "`  - Success!"
-Write-Host "Downloading Chrome" -NoNewline
-(New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise64.msi", "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi")
-Write-host "`  - Success!"
-Write-Host "Downloading Rainway" -NoNewline
-(New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
-Write-host "`  - Success!"
-Write-Host "Downloading 7Zip"
-$url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
-(New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe")
-Write-host "`  - Success!"
-Write-Host "Downloading Devcon" -NoNewline
-(New-Object System.Net.WebClient).DownloadFile("https://s3.amazonaws.com/parsec-files-ami-setup/Devcon/devcon.exe", "C:\ParsecTemp\Devcon\devcon.exe")
-Write-host "`r - Success!"
+    Write-Output "Downloading tools..."
+    Write-Host "Downloading DirectX" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\CloudRIGTemp\Apps\directx_Jun2010_redist.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading GPU Update tool" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Chrome" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise64.msi", "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Rainway" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading 7Zip"
+    $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
+    (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Devcon" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "C:\CloudRIGTemp\Devcon\devcon.exe" | Out-Null
+    Write-host "`  - Success!"
+    Write-Host "Downloading VC Redist 2010" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2010_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" | Out-Null
+    Write-host "`  - Success!"
+    Write-Host "Downloading VC Redist 2015" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" | Out-Null
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe"
+    Write-host "`  - Success!"
+    Write-Host "Downloading VC Redist 2017" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" | Out-Null
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" | Out-Null
+    Write-host "`  - Success!"
+    Write-Host "Downloading SetDefaultBrowser" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/kolbicz/SetDefaultBrowser.exe" -LocalFile "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" | Out-Null
+    Write-host "`  - Success!"
 }
+
 
 #install-base-files-silently
 function install-windows-features {
-Write-Output "Installing tools..."
-start-process -filepath "C:\Windows\System32\msiexec.exe" -ArgumentList '/qn /i "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi"' -Wait
-Start-Process -FilePath "C:\CloudRIGTemp\Apps\directx_jun2010_redist.exe" -ArgumentList '/T:C:\CloudRIGTemp\DirectX /Q'-wait
-Start-Process -FilePath "C:\CloudRIGTemp\DirectX\DXSETUP.EXE" -ArgumentList '/silent' -wait
-Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
-Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
-Install-WindowsFeature Direct-Play | Out-Null
-Install-WindowsFeature Net-Framework-Core | Out-Null
-Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
+    Write-Output "Installing tools..."
+    start-process -filepath "C:\Windows\System32\msiexec.exe" -ArgumentList '/qn /i "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi"' -Wait
+    set-default-browser
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\directx_jun2010_redist.exe" -ArgumentList '/T:C:\CloudRIGTemp\DirectX /Q'-wait
+    Start-Process -FilePath "C:\CloudRIGTemp\DirectX\DXSETUP.EXE" -ArgumentList '/silent' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
+    Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
+    Install-WindowsFeature Direct-Play | Out-Null
+    Install-WindowsFeature Net-Framework-Core | Out-Null
+    Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
+}
+
+function set-default-browser {
+    Write-Host "Setting Chrome as the default browser and in the taskbar..."
+    Start-Process "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" -ArgumentList 'HKLM "Google Chrome"' -Wait
+    $Target = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    $KeyPath1  = "HKLM:\SOFTWARE\Classes"
+    $KeyPath2  = "*"
+    $KeyPath3  = "shell"
+    $KeyPath4  = "{:}"
+    $ValueName = "ExplorerCommandHandler"
+    $ValueData = (Get-ItemProperty ("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\" + "CommandStore\shell\Windows.taskbarpin")).ExplorerCommandHandler
+
+    $Key2 = (Get-Item $KeyPath1).OpenSubKey($KeyPath2, $true)
+    $Key3 = $Key2.CreateSubKey($KeyPath3, $true)
+    $Key4 = $Key3.CreateSubKey($KeyPath4, $true)
+    $Key4.SetValue($ValueName, $ValueData)
+
+    $Shell = New-Object -ComObject "Shell.Application"
+    $Folder = $Shell.Namespace((Get-Item $Target).DirectoryName)
+    $Item = $Folder.ParseName((Get-Item $Target).Name)
+    $Item.InvokeVerb("{:}")
+
+    $Key3.DeleteSubKey($KeyPath4)
+    if ($Key3.SubKeyCount -eq 0 -and $Key3.ValueCount -eq 0) {
+        $Key2.DeleteSubKey($KeyPath3)
+    }
 }
 
 #set update policy
 function set-update-policy {
-Write-Output "Disabling Windows Update"
-if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'DoNotConnectToWindowsUpdateInternetLocations') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null}
-if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'UpdateServiceURLAlternative') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null}
-if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'WUServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null}
-if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'WUSatusServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUSatusServer" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUSatusServer" -Value "http://intentionally.disabled" | Out-Null}
-Set-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "AUOptions" -Value 1 | Out-Null
-if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' -value 'UseWUServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "UseWUServer" -Value 1 | Out-Null} else {new-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "UseWUServer" -Value 1 | Out-Null}
+    Write-Output "Disabling Windows Update"
+    if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'DoNotConnectToWindowsUpdateInternetLocations') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null}
+    if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'UpdateServiceURLAlternative') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null}
+    if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'WUServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null}
+    if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'WUSatusServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUSatusServer" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUSatusServer" -Value "http://intentionally.disabled" | Out-Null}
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "AUOptions" -Value 1 | Out-Null
+    if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' -value 'UseWUServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "UseWUServer" -Value 1 | Out-Null} else {new-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU -Name "UseWUServer" -Value 1 | Out-Null}
 }
 
 #set automatic time and timezone
 function set-time {
-Write-Output "Setting Time to Automatic"
-Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
-Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
+    Write-Output "Setting Time to Automatic"
+    Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
+    Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
 }
 
 #disable new network window
 function disable-network-window {
 Write-Output "Disabling New Network Window"
-if((Test-RegistryValue -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -Value NewNetworkWindowOff)-eq $true) {} Else {new-itemproperty -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -name "NewNetworkWindowOff" | Out-Null}
+    if((Test-RegistryValue -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -Value NewNetworkWindowOff)-eq $true) {
+
+    } Else {
+        new-itemproperty -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -name "NewNetworkWindowOff" | Out-Null
+    }
 }
 
 #Enable Pointer Precision 
 function enhance-pointer-precision {
-Write-Output "Enabling Enhanced Pointer Precision"
-Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
+    Write-Output "Enabling Enhanced Pointer Precision"
+    Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
 }
 
 #enable Mouse Keys
 function enable-mousekeys {
-Write-Output "Enabling Mouse Keys"
-set-Itemproperty -Path 'HKCU:\Control Panel\Accessibility\MouseKeys' -Name Flags -Value 63 | Out-Null
+    Write-Output "Enabling Mouse Keys"
+    Set-Itemproperty -Path 'HKCU:\Control Panel\Accessibility\MouseKeys' -Name Flags -Value 63 | Out-Null
 }
 
 #disable shutdown start menu
 function remove-shutdown {
-Write-Output "Disabling Shutdown Option in Start Menu"
-New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name NoClose -Value 1 | Out-Null
+    Write-Output "Disabling Shutdown Option in Start Menu"
+    New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name NoClose -Value 1 | Out-Null
 }
 
 #Sets all applications to force close on shutdown
 function force-close-apps {
-if (((Get-Item -Path "HKCU:\Control Panel\Desktop").GetValue("AutoEndTasks") -ne $null) -eq $true) 
-{Set-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"
-"Removed Startup Item from Razer Synapse"}
-Else {New-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"}
+    if (((Get-Item -Path "HKCU:\Control Panel\Desktop").GetValue("AutoEndTasks") -ne $null) -eq $true) {
+        Set-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"
+        Write-Host "Removed Startup Item from Razer Synapse"
+    }
+    Else {
+        New-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"
+    }
 }
 
 #show hidden items
 function show-hidden-items {
-Write-Output "Showing Hidden Files in Explorer"
-set-itemproperty -path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Hidden -Value 1 | Out-Null
+    Write-Output "Showing Hidden Files in Explorer"
+    set-itemproperty -path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Hidden -Value 1 | Out-Null
 }
 
 #show file extensions
 function show-file-extensions {
-Write-Output "Showing File Extensions"
-Set-itemproperty -path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name HideFileExt -Value 0 | Out-Null
+    Write-Output "Showing File Extensions"
+    Set-itemproperty -path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name HideFileExt -Value 0 | Out-Null
 }
 
 #disable logout start menu
 function disable-logout {
-Write-Output "Disabling Logout"
-if((Test-RegistryValue -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Value StartMenuLogOff )-eq $true) {Set-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null} Else {New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null}
+    Write-Output "Disabling Logout"
+    if((Test-RegistryValue -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Value StartMenuLogOff )-eq $true) {Set-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null} Else {New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null}
 }
 
 #disable lock start menu
 function disable-lock {
-Write-Output "Disable Lock"
-if((Test-Path -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies -Name Software | Out-Null}
-if((Test-RegistryValue -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Value DisableLockWorkstation) -eq $true) {Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null } Else {New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null}
+    Write-Output "Disable Lock"
+    if((Test-Path -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies -Name Software | Out-Null}
+    if((Test-RegistryValue -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Value DisableLockWorkstation) -eq $true) {Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null } Else {New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null}
 }
 
 #set wallpaper
 function set-wallpaper {
-Write-Output "Setting WallPaper"
-#if((Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies" -Name "System" | Out-Null}
-#if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value Wallpaper) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -PropertyType String -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null}
-#if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value WallpaperStyle) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -value 2 | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -PropertyType String -value 2 | Out-Null}
-#Stop-Process -ProcessName explorer
+    Write-Output "Setting WallPaper"
+    #if((Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies" -Name "System" | Out-Null}
+    #if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value Wallpaper) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -PropertyType String -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null}
+    #if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value WallpaperStyle) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -value 2 | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -PropertyType String -value 2 | Out-Null}
+    #Stop-Process -ProcessName explorer
 }
 
 #disable recent start menu items
 function disable-recent-start-menu {
-New-Item -path HKLM:\SOFTWARE\Policies\Microsoft\Windows -name Explorer
-New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -PropertyType DWORD -Name HideRecentlyAddedApps -Value 1
+    New-Item -path HKLM:\SOFTWARE\Policies\Microsoft\Windows -name Explorer
+    New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -PropertyType DWORD -Name HideRecentlyAddedApps -Value 1
 }
 
 #enable auto login - remove user password
 function autoLogin { Write-Host "This cloud machine needs to be set to automatically login - please use the Setup Auto Login shortcut + Instructions on the desktop to set this up when the script is finished" -ForegroundColor red
-(New-Object System.Net.WebClient).DownloadFile("https://download.sysinternals.com/files/AutoLogon.zip", "$env:APPDATA\CloudRIGLoader\Autologon.zip")
-Expand-Archive "$env:APPDATA\CloudRIGLoader\Autologon.zip" -DestinationPath "$env:APPDATA\CloudRIGLoader" -Force
-$output = "
-This application was provided by Mark Rusinovish from System Internals",
-"https://docs.microsoft.com/en-us/sysinternals/downloads/autologon",
-"",
-"What this application does:  Enables your server to automatically login, so you can log into Rainway straight away.",
-"When to use it: The first time you setup your server, or when you change your servers password.",
-"",
-"Instructions",
-"Accept the EULA and enter the following details",
-"Username: $env:username",
-"Domain: $env:Computername",
-"Password: The password you got from Azure/AWS/Google that you use to log into RDP"
-$output | Out-File "$path\Auto Login\Auto Login Instructions.txt"
+    (New-Object System.Net.WebClient).DownloadFile("https://download.sysinternals.com/files/AutoLogon.zip", "$env:APPDATA\CloudRIGLoader\Autologon.zip")
+    Expand-Archive "$env:APPDATA\CloudRIGLoader\Autologon.zip" -DestinationPath "$env:APPDATA\CloudRIGLoader" -Force
+    $output = "
+    This application was provided by Mark Rusinovish from System Internals",
+    "https://docs.microsoft.com/en-us/sysinternals/downloads/autologon",
+    "",
+    "What this application does:  Enables your server to automatically login, so you can log into Rainway straight away.",
+    "When to use it: The first time you setup your server, or when you change your servers password.",
+    "",
+    "Instructions",
+    "Accept the EULA and enter the following details",
+    "Username: $env:username",
+    "Domain: $env:Computername",
+    "Password: The password you got from Azure/AWS/Google that you use to log into RDP"
+    $output | Out-File "$path\Auto Login\Auto Login Instructions.txt"
 
-autoLoginShortCut
+    autoLoginShortCut
 }
 
 #Creates Shortcut to Autologon.exe
 function autoLoginShortCut {
-Write-Output "Create Auto Login Shortcut"
-$Shell = New-Object -ComObject ("WScript.Shell")
-$ShortCut = $Shell.CreateShortcut("$path\Auto Login\Setup Auto Logon.lnk")
-$ShortCut.TargetPath="$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\Autologon.exe"
-$ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-$ShortCut.WindowStyle = 0;
-$ShortCut.Description = "Setup AutoLogon Shortcut";
-$ShortCut.Save()
+    Write-Output "Create Auto Login Shortcut"
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$path\Auto Login\Setup Auto Logon.lnk")
+    $ShortCut.TargetPath="$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\Autologon.exe"
+    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "Setup AutoLogon Shortcut";
+    $ShortCut.Save()
 }
 
 #createshortcut
 function Create-ClearProxy-Shortcut{
-Write-Output "Create ClearProxy shortcut"
-$Shell = New-Object -ComObject ("WScript.Shell")
-$ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Auto Recover GPU.lnk")
-$ShortCut.TargetPath="powershell.exe"
-$ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateClearProxyScheduledTask.ps1"'
-$ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-$ShortCut.WindowStyle = 0;
-$ShortCut.Description = "ClearProxy shortcut";
-$ShortCut.Save()
+    Write-Output "Create ClearProxy shortcut"
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Auto Recover GPU.lnk")
+    $ShortCut.TargetPath="powershell.exe"
+    $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateClearProxyScheduledTask.ps1"'
+    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "ClearProxy shortcut";
+    $ShortCut.Save()
 }
 
 #createshortcut
 function Create-AutoShutdown-Shortcut{
-Write-Output "Create Auto Shutdown Shortcut"
-$Shell = New-Object -ComObject ("WScript.Shell")
-$ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup Auto Shutdown.lnk")
-$ShortCut.TargetPath="powershell.exe"
-$ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1"'
-$ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-$ShortCut.WindowStyle = 0;
-$ShortCut.Description = "ClearProxy shortcut";
-$ShortCut.Save()
+    Write-Output "Create Auto Shutdown Shortcut"
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup Auto Shutdown.lnk")
+    $ShortCut.TargetPath="powershell.exe"
+    $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1"'
+    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "ClearProxy shortcut";
+    $ShortCut.Save()
 }
 
 #createshortcut
 function Create-One-Hour-Warning-Shortcut{
-Write-Output "Create One Hour Warning"
-$Shell = New-Object -ComObject ("WScript.Shell")
-$ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup One Hour Warning.lnk")
-$ShortCut.TargetPath="powershell.exe"
-$ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateOneHourWarningScheduledTask.ps1"'
-$ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-$ShortCut.WindowStyle = 0;
-$ShortCut.Description = "OneHourWarning shortcut";
-$ShortCut.Save()
+    Write-Output "Create One Hour Warning"
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup One Hour Warning.lnk")
+    $ShortCut.TargetPath="powershell.exe"
+    $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateOneHourWarningScheduledTask.ps1"'
+    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "OneHourWarning shortcut";
+    $ShortCut.Save()
 }
 
-#create shortcut for electron app
-function create-shortcut-app {
-#Write-Output "Moving Parsec app shortcut to Desktop"
-#Copy-Item -Path $path\CloudRIGTemp\PostInstall\Parsec.lnk -Destination $path
+#create shortcut for Rainway
+function create-shortcut-rainway {
+    Write-Output "Creating Rainway app shortcut to Desktop..."
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Rainway.lnk")
+    $ShortCut.TargetPath="C:\Program Files\Rainway\bootstrapper.exe"
+    $ShortCut.WorkingDirectory = "C:\Program Files\Rainway\";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "Rainway";
+    $ShortCut.Save()
 }
 
 #Disables Server Manager opening on Startup
@@ -314,54 +375,54 @@ Remove-Item -Path "$path\EC2 Microsoft Windows Guide.website"
 
 
 Function ExtractRazerAudio {
-#Move extracts Razer Surround Files into correct location
-Write-Host "Moving Razer Surround files to the correct location"
-cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\razer-surround-driver.exe -oC:\CloudRIGTemp\Apps\razer-surround-driver -y' | Out-Null
-}
+    #Move extracts Razer Surround Files into correct location
+    Write-Host "Moving Razer Surround files to the correct location"
+    cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\razer-surround-driver.exe -oC:\CloudRIGTemp\Apps\razer-surround-driver -y' | Out-Null
+    }
 
-Function ModidifyManifest {
-#modifys the installer manifest to run without interraction
-$InstallerManifest = 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\InstallerManifest.xml'
-$regex = '(?<=<SilentMode>)[^<]*'
-(Get-Content $InstallerManifest) -replace $regex, 'true' | Set-Content $InstallerManifest -Encoding UTF8
+    Function ModidifyManifest {
+    #modifys the installer manifest to run without interraction
+    $InstallerManifest = 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\InstallerManifest.xml'
+    $regex = '(?<=<SilentMode>)[^<]*'
+    (Get-Content $InstallerManifest) -replace $regex, 'true' | Set-Content $InstallerManifest -Encoding UTF8
 }
 
 #AWS Specific tweaks
 function aws-setup {
-#clean-aws
-Write-Output "Installing VNC, and installing audio driver"
-(New-Object System.Net.WebClient).DownloadFile($(((Invoke-WebRequest -Uri https://www.tightvnc.com/download.php -UseBasicParsing).Links.OuterHTML -like "*Installer for Windows (64-bit)*").split('"')[1].split('"')[0]), "C:\CloudRIGTemp\Apps\tightvnc.msi")
-(New-Object System.Net.WebClient).DownloadFile("http://rzr.to/surround-pc-download", "C:\CloudRIGTemp\Apps\razer-surround-driver.exe")
-start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value $env:USERNAME | Out-Null
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
-if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
-Write-Host "Installing Razer Surround - it's the Audio Driver - you DON'T need to sign into Razer Synapse" -ForegroundColor Red
-ExtractRazerAudio
-ModidifyManifest
-$OriginalLocation = Get-Location
-Set-Location -Path 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\'
-Write-Output "The Audio Driver, Razer Surround is now installing"
-Start-Process RzUpdateManager.exe
-Set-Location $OriginalLocation
-Set-Service -Name audiosrv -StartupType Automatic
-Write-Output "VNC has been installed on this computer using Port 5900 and Password 4ubg9sde"
+    #clean-aws
+    Write-Output "Installing VNC, and installing audio driver"
+    (New-Object System.Net.WebClient).DownloadFile($(((Invoke-WebRequest -Uri https://www.tightvnc.com/download.php -UseBasicParsing).Links.OuterHTML -like "*Installer for Windows (64-bit)*").split('"')[1].split('"')[0]), "C:\CloudRIGTemp\Apps\tightvnc.msi")
+    (New-Object System.Net.WebClient).DownloadFile("http://rzr.to/surround-pc-download", "C:\CloudRIGTemp\Apps\razer-surround-driver.exe")
+    start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value $env:USERNAME | Out-Null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
+    if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
+    Write-Host "Installing Razer Surround - it's the Audio Driver - you DON'T need to sign into Razer Synapse" -ForegroundColor Red
+    ExtractRazerAudio
+    ModidifyManifest
+    $OriginalLocation = Get-Location
+    Set-Location -Path 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\'
+    Write-Output "The Audio Driver, Razer Surround is now installing"
+    Start-Process RzUpdateManager.exe
+    Set-Location $OriginalLocation
+    Set-Service -Name audiosrv -StartupType Automatic
+    Write-Output "VNC has been installed on this computer using Port 5900 and Password 4ubg9sde"
 }
 
 #Creates shortcut for the GPU Updater tool
 function gpu-update-shortcut {
-(New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1")
-Unblock-File -Path "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1"
-Write-Output "GPU-Update-Shortcut"
-$Shell = New-Object -ComObject ("WScript.Shell")
-$ShortCut = $Shell.CreateShortcut("$path\GPU Updater.lnk")
-$ShortCut.TargetPath="powershell.exe"
-$ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1"'
-$ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-$ShortCut.IconLocation = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\GPU-Update.ico, 0";
-$ShortCut.WindowStyle = 0;
-$ShortCut.Description = "GPU Updater shortcut";
-$ShortCut.Save()
+    (New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1")
+    Unblock-File -Path "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1"
+    Write-Output "GPU-Update-Shortcut"
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$path\GPU Updater.lnk")
+    $ShortCut.TargetPath="powershell.exe"
+    $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1"'
+    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
+    $ShortCut.IconLocation = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\GPU-Update.ico, 0";
+    $ShortCut.WindowStyle = 0;
+    $ShortCut.Description = "GPU Updater shortcut";
+    $ShortCut.Save()
 }
 
 #Provider specific driver install and setup
@@ -508,45 +569,83 @@ Function DownloadParsecServiceManager {
 }
 
 Function InstallParsec {
-Write-Host "Installing Parsec"
-Install7Zip
-ExtractInstallFiles
-InstallViGEmBus
-CreateFireWallRule
-CreateParsecService
-DownloadParsecServiceManager
-# Write-host "Successfully installed Parsec"
+    Write-Host "Installing Parsec"
+    Install7Zip
+    ExtractInstallFiles
+    InstallViGEmBus
+    CreateFireWallRule
+    CreateParsecService
+    DownloadParsecServiceManager
+    # Write-host "Successfully installed Parsec"
 }
 
-#Apps that require human intervention
 function Install-Gaming-Apps {
-#InstallParsec
-#New-ItemProperty -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -Name "Parsec.App.0" -Value "C:\Program Files\Parsec\parsecd.exe" | Out-Null
-#Start-Process -FilePath "C:\Program Files\Parsec\parsecd.exe"
-#Start-Sleep -s 1
-#Write-Output "app_host=1" | Out-File -FilePath $ENV:AppData\Parsec\config.txt -Encoding ascii
+    Write-Output "Downloading gaming apps..."
+    Write-Host "Downloading Steam" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe", "C:\CloudRIGTemp\Apps\SteamSetup.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Discord" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://discordapp.com/api/download?platform=win", "C:\CloudRIGTemp\Apps\DiscordSetup.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Origin" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://origin-a.akamaihd.net/Origin-Client-Download/origin/live/OriginThinSetup.exe", "C:\CloudRIGTemp\Apps\OriginThinSetup.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Battle.net" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&version=LIVE&gameProgram=BATTLENET_APP", "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe")
+    Write-host "`  - Success!"
+    Write-Host "Downloading Epic Games launcher" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi", "C:\CloudRIGTemp\Apps\EpicGamesLauncherInstaller.msi")
+    Write-host "`  - Success!"
+    Write-Host "Downloading uPlay" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://ubistatic3-a.akamaihd.net/orbit/launcher_installer/UplayInstaller.exe", "C:\CloudRIGTemp\Apps\UplayInstaller.exe")
+    Write-host "`  - Success!"
+
+
+    Write-Output "Installing gaming apps..."
+    Write-Host "Installing Steam" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\SteamSetup.exe" -ArgumentList '/S'
+    Write-host "`  - Success!"
+    Write-Host "Installing Discord" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\DiscordSetup.exe"
+    Write-host "`  - Success!"
+    Write-Host "Installing Origin" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\OriginThinSetup.exe" -ArgumentList '/SILENT'
+    Write-host "`  - Success!"
+    # No silent install available :/
+    #Write-Host "Installing Battle.net" -NoNewline
+    #Start-Process "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe" -ArgumentList '/S /Silent /SILENT /q /QUIET'
+    #Write-host "`  - Success!"
+    Write-Host "Installing Epic Games Launcher" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\EpicGamesLauncherInstaller.msi" -ArgumentList '/qn /norestart'
+    Write-host "`  - Success!"
+    Write-Host "Installing uPlay" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\UplayInstaller.exe" -ArgumentList '/S'
+    Write-host "`  - Success!"
+
+    Write-host "Sleeping 20s to let the installer finish their work"
+    Start-Sleep -Seconds 20
 }
 
 #Disable Devices
 function disable-devices {
-write-output "Disabling devices not required"
-Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "HDAUDIO\FUNC_01&VEN_10DE&DEV_0083&SUBSYS_10DE11A3*"'
-Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
-Get-PnpDevice| where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
-Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
+    Write-Output "Disabling devices not required"
+    Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "HDAUDIO\FUNC_01&VEN_10DE&DEV_0083&SUBSYS_10DE11A3*"'
+    Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
+    Get-PnpDevice| where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
+    Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
 }
 
 #Cleanup
 function clean-up {
-Write-Output "Cleaning up!"
-Remove-Item -Path C:\CloudRIGTemp\Drivers -force -Recurse
-Remove-Item -Path $path\CloudRIGTemp -force -Recurse
+    Write-Output "Cleaning up!"
+    Remove-Item -Path C:\CloudRIGTemp\Drivers -force -Recurse -ErrorAction SilentlyContinue
+    Remove-Item -Path $path\CloudRIGTemp -force -Recurse -ErrorAction SilentlyContinue
 }
 
 #cleanup recent files
 function clean-up-recent {
-Write-Output "Removing recent files"
-remove-item "$env:APPDATA\Microsoft\Windows\Recent\*" -Recurse -Force | Out-Null
+    Write-Output "Removing recent files"
+    Remove-Item "$env:APPDATA\Microsoft\Windows\Recent\*" -Recurse -Force | Out-Null
 }
 
 Write-Host -foregroundcolor red "
@@ -604,21 +703,13 @@ disable-server-manager
 Install-Gaming-Apps
 Start-Sleep -s 5
 Server2019Controller
-create-shortcut-app
+create-shortcut-rainway
 gpu-update-shortcut
 disable-devices
 clean-up
 clean-up-recent
 provider-specific
-#Write-Host "Once you have installed Razer Surround, the script is finished" -ForegroundColor RED
-#Write-Host "PARSEC WILL NOT BE VISIBLE IF YOU'RE CONNECTED VIA RDP" -ForegroundColor RED
-#Write-Host  "USE ParsecServiceManager.exe (ON DESKTOP) IN ORDER TO SIGN IN" -ForegroundColor RED
-#Write-Host "THINGS YOU NEED TO DO" -ForegroundColor RED
-#Write-Host "1. Open Parsec and sign in (use ParsecServiceManager.exe if connected via RDP)" -ForegroundColor RED
-#Write-Host "2. Open Setup Auto Logon on the Desktop and follow the instructions (in the text file on the Desktop)" -ForegroundColor RED
-#Write-Host "3. Run GPU Updater Tool" -ForegroundColor RED
-#Write-Host "4. If your computer doesn't reboot automatically, restart it from the Start Menu after GPU Updater Tool is finished" -ForegroundColor RED
 
 # Execute the GPU Updater in silent mode
 cd $env:USERPROFILE\AppData\Roaming\CloudRIGLoader
-powershell.exe -ExecutionPolicy Bypass -File "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false
+powershell.exe -ExecutionPolicy Bypass -File "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false -DoNotReboot true

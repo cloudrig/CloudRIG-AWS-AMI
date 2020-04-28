@@ -66,7 +66,9 @@ Resources:
                 Action:
                   - s3:*
                 Resource:
+                  - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}'
                   - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}/*'
+                  - 'arn:aws:s3:::nvidia-gaming'
                   - 'arn:aws:s3:::nvidia-gaming/*'
         - PolicyName: allow-to-log
           PolicyDocument:
@@ -177,11 +179,11 @@ Resources:
           SourceAmiId:
             type: String
             description: "The source AMI ID."
-            default: "{{ssm:/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base}}"
+            default: "{{ssm:/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base}}"
           SourceOSName:
             type: String
             description: "The source AMI OS short name"
-            default: "win16full"
+            default: "win19full"
           IamInstanceProfileName:
             type: String
             description: "The name of the role that enables Systems Manager to manage the instance."
@@ -192,11 +194,11 @@ Resources:
             default: !GetAtt BuildAMIAutomationServiceRole.Arn
           InstanceType:
             type: String
-            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
-            default: g2.2xlarge
+            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g4dn.xlarge."
+            default: g4dn.xlarge
           KeyPairName:
             type: String
-            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g2.2xlarge."
+            description: "The KeyPair to associate to the build instance"
             default: !Ref KeyPairName
           SubnetId:
             type: String
@@ -250,7 +252,7 @@ Resources:
                   - 'New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force'
 
           # Reboot to take into account the changes
-          - name: Reboot
+          - name: RebootForDisableUAC
             action: aws:executeAutomation
             maxAttempts: 3
             timeoutSeconds: 3600
@@ -261,28 +263,27 @@ Resources:
                 InstanceId:
                   - "{{ LaunchInstance.InstanceIds }}"
 
-          # Install the parsec preparation package (GPU updater...)
-          - name: InstallParsecPreparationTool
-            action: aws:runCommand
-            maxAttempts: 1
+          - name: ApproveInstallationScriptFinished
+            action: aws:approve
             onFailure: "step:TerminateInstance"
-            timeoutSeconds: 3600
+            timeoutSeconds: 900
             inputs:
-              DocumentName: AWS-RunPowerShellScript
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                commands:
-                  - $ErrorActionPreference = "Stop"
-                  - '[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
-                  - 'New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null'
-                  - Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
-                  - Expand-Archive "C:\CloudRIGTemp\cloudrig-windows-install.zip" -DestinationPath "C:\CloudRIGTemp\cloudrig-windows-install\"
-                  - cd "C:\CloudRIGTemp\cloudrig-windows-install\"
-                  - '& ".\SSMLoader.ps1"'
+              Message: "Please install the CloudRIG tools before approving..."
+              MinRequiredApprovals: 1
+              Approvers:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+
+          # Reboot to take into account the changes
+          - name: RebootForInstallationScriptFinished
+            action: aws:executeAutomation
+            maxAttempts: 3
+            timeoutSeconds: 3600
+            onFailure: Abort
+            inputs:
+              DocumentName: AWS-RestartEC2Instance
+              RuntimeParameters:
+                InstanceId:
+                  - "{{ LaunchInstance.InstanceIds }}"
 
           # Update the EC2 Config
           - name: UpdateEC2Config
@@ -375,38 +376,21 @@ Resources:
                 name: AWSNVMe
                 action: Install
 
-          # Install the Windows Updates
-          - name: InstallWindowsUpdates
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:TerminateInstance"
-            timeoutSeconds: 14400
-            inputs:
-              DocumentName: AWS-InstallWindowsUpdates
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                Action: Install
-
-          # Disable the UAC to avoid disturbing the installations
-          - name: ActivateUAC
-            action: aws:runCommand
-            maxAttempts: 1
-            onFailure: "step:TerminateInstance"
-            timeoutSeconds: 3600
-            inputs:
-              DocumentName: AWS-RunPowerShellScript
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                commands:
-                  - 'New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 1 -Force'
+#          # Install the Windows Updates
+#          - name: InstallWindowsUpdates
+#            action: aws:runCommand
+#            maxAttempts: 3
+#            onFailure: "step:TerminateInstance"
+#            timeoutSeconds: 14400
+#            inputs:
+#              DocumentName: AWS-InstallWindowsUpdates
+#              InstanceIds:
+#                - "{{ LaunchInstance.InstanceIds }}"
+#              CloudWatchOutputConfig:
+#                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+#                CloudWatchOutputEnabled: true
+#              Parameters:
+#                Action: Install
 
           # Sysprem the instance
           - name: RunSysprepGeneralize
@@ -465,15 +449,6 @@ Resources:
                 - Key: cloudrig:ami:compatibility:os
                   Value: "{{ SourceOSName }}"
 
-          - name: TerminateInstance
-            action: aws:changeInstanceState
-            maxAttempts: 3
-            onFailure: Abort
-            inputs:
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              DesiredState: terminated
-
           - name: VerifyImageAvailability
             action: aws:waitForAwsResourceProperty
             timeoutSeconds: 600
@@ -490,7 +465,6 @@ Resources:
             action: aws:executeScript
             timeoutSeconds: 45
             onFailure: Abort
-            isEnd: true
             inputs:
               Runtime: python3.7
               Handler: copyImageInAllRegions
@@ -512,6 +486,16 @@ Resources:
                       SourceImageId=newImageId,
                       SourceRegion='eu-west-1'
                     )
+
+          - name: TerminateInstance
+            action: aws:changeInstanceState
+            maxAttempts: 3
+            onFailure: Abort
+            isEnd: true
+            inputs:
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceIds }}"
+              DesiredState: terminated
 
         outputs:
           - CreateImage.ImageId
