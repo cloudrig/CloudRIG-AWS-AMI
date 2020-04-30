@@ -288,28 +288,6 @@ Resources:
               DesiredValues:
                 - running
 
-          - name: ApproveInstallationScriptFinished
-            action: aws:approve
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 900
-            inputs:
-              Message: "Please install the CloudRIG tools before approving..."
-              MinRequiredApprovals: 1
-              Approvers:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
-
-          # Reboot to take into account the changes
-          - name: RebootForInstallationScriptFinished
-            action: aws:executeAutomation
-            maxAttempts: 3
-            timeoutSeconds: 3600
-            onFailure: "step:CancelSpotRequest"
-            inputs:
-              DocumentName: AWS-RestartEC2Instance
-              RuntimeParameters:
-                InstanceId:
-                  - "{{ LaunchInstanceAsSpotDetails.InstanceIds }}"
-
           # Update the EC2 Config
           - name: UpdateEC2Config
             action: aws:runCommand
@@ -416,6 +394,30 @@ Resources:
 #                CloudWatchOutputEnabled: true
 #              Parameters:
 #                Action: Install
+
+          # As the scripts can only be executed through RDP (as the session needs to be opened), we wait here for the
+          # confirmation that the tools has been manually installed.
+          - name: ApproveInstallationScriptFinished
+            action: aws:approve
+            onFailure: "step:CancelSpotRequest"
+            timeoutSeconds: 900
+            inputs:
+              Message: "Please install the CloudRIG tools before approving"
+              MinRequiredApprovals: 1
+              Approvers:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+
+          # Reboot to take into account the changes
+          - name: RebootForInstallationScriptFinished
+            action: aws:executeAutomation
+            maxAttempts: 3
+            timeoutSeconds: 3600
+            onFailure: "step:CancelSpotRequest"
+            inputs:
+              DocumentName: AWS-RestartEC2Instance
+              RuntimeParameters:
+                InstanceId:
+                  - "{{ LaunchInstanceAsSpotDetails.InstanceIds }}"
 
           # Sysprem the instance
           - name: RunSysprepGeneralize
@@ -532,7 +534,6 @@ Resources:
               InstanceIds:
                 - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               DesiredState: terminated
-
 
         outputs:
           - CreateImage.ImageId
