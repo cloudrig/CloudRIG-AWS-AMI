@@ -218,54 +218,79 @@ Resources:
             description: "The name of the log group that will aggregate the build logs"
             default: !Ref BuildAMILogs
         mainSteps:
-          - name: LaunchInstance
-            action: aws:runInstances
-            timeoutSeconds: 600
-            maxAttempts: 2
-            onFailure: Abort
-            inputs:
-              ImageId: "{{ SourceAmiId  }}"
-              InstanceType: "{{ InstanceType }}"
-              MinInstanceCount: 1
-              MaxInstanceCount: 1
-              IamInstanceProfileName: "{{ IamInstanceProfileName }}"
-              SubnetId: "{{ SubnetId }}"
-              SecurityGroupIds:
-              - "{{ SecurityGroupId }}"
-              KeyName: "{{ KeyPairName }}"
-
-          # Disable the UAC to avoid disturbing the installations
-          - name: DisableUAC
-            action: aws:runCommand
+          - name: LaunchInstanceAsSpot
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
             maxAttempts: 1
-            onFailure: "step:TerminateInstance"
-            timeoutSeconds: 3600
-            inputs:
-              DocumentName: AWS-RunPowerShellScript
-              InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                commands:
-                  - 'New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force'
-
-          # Reboot to take into account the changes
-          - name: RebootForDisableUAC
-            action: aws:executeAutomation
-            maxAttempts: 3
-            timeoutSeconds: 3600
             onFailure: Abort
             inputs:
-              DocumentName: AWS-RestartEC2Instance
-              RuntimeParameters:
-                InstanceId:
-                  - "{{ LaunchInstance.InstanceIds }}"
+              Service: ec2
+              Api: RequestSpotInstances
+              Type: one-time
+              BlockDurationMinutes: 60
+              InstanceCount: 1
+              LaunchSpecification:
+                ImageId: "{{ SourceAmiId }}"
+                InstanceType: "{{ InstanceType }}"
+                IamInstanceProfile:
+                  Name: "{{ IamInstanceProfileName }}"
+                KeyName: "{{ KeyPairName }}"
+                SubnetId: "{{ SubnetId }}"
+                SecurityGroupIds:
+                  - "{{ SecurityGroupId }}"
+            outputs:
+              - Name: RequestId
+                Selector: "$.requestId"
+                Type: String
+
+          - name: SleepForSpotRequestFullfill
+            action: aws:sleep
+            inputs:
+              Duration: PT30S
+
+          - name: LaunchInstanceAsSpotDetails
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 1
+            onFailure: "step:CancelSpotRequest"
+            inputs:
+              Service: ec2
+              Api: DescribeSpotInstanceRequests
+              SpotInstanceRequestIds:
+                - "{{ LaunchInstanceAsSpot.RequestId }}"
+            outputs:
+              - Name: InstanceId
+                Selector: "$.spotInstanceRequestSet[0].instanceId"
+                Type: String
+
+          - name: WaitForSpotInstanceReady
+            action: aws:waitForAwsResourceProperty
+            timeoutSeconds: 300
+            onFailure: "step:CancelSpotRequest"
+            inputs:
+              Service: ec2
+              Api: DescribeInstanceStatus
+              InstanceIds:
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+              PropertySelector: "$.InstanceStatuses[0].InstanceState.Name"
+              DesiredValues:
+                - running
+
+          - name: AssertSpotInstanceStateRunning
+            action: aws:assertAwsResourceProperty
+            onFailure: "step:CancelSpotRequest"
+            inputs:
+              Service: ec2
+              Api: DescribeInstanceStatus
+              InstanceIds:
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+              PropertySelector: "$.InstanceStatuses[0].InstanceState.Name"
+              DesiredValues:
+                - running
 
           - name: ApproveInstallationScriptFinished
             action: aws:approve
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 900
             inputs:
               Message: "Please install the CloudRIG tools before approving..."
@@ -278,23 +303,23 @@ Resources:
             action: aws:executeAutomation
             maxAttempts: 3
             timeoutSeconds: 3600
-            onFailure: Abort
+            onFailure: "step:CancelSpotRequest"
             inputs:
               DocumentName: AWS-RestartEC2Instance
               RuntimeParameters:
                 InstanceId:
-                  - "{{ LaunchInstance.InstanceIds }}"
+                  - "{{ LaunchInstanceAsSpotDetails.InstanceIds }}"
 
           # Update the EC2 Config
           - name: UpdateEC2Config
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWS-InstallPowerShellModule
               InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -315,12 +340,12 @@ Resources:
           - name: UpdateSSMAgent
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWS-UpdateSSMAgent
               InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -331,12 +356,12 @@ Resources:
           - name: UpdateAWSPVDriver
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWS-ConfigureAWSPackage
               InstanceIds:
-                - "{{LaunchInstance.InstanceIds}}"
+                - "{{LaunchInstanceAsSpotDetails.InstanceId}}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -347,12 +372,12 @@ Resources:
           - name: UpdateAWSEnaNetworkDriver
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWS-ConfigureAWSPackage
               InstanceIds:
-                - "{{LaunchInstance.InstanceIds}}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -363,12 +388,12 @@ Resources:
           - name: UpdateAWSNVMe
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWS-ConfigureAWSPackage
               InstanceIds:
-                - "{{LaunchInstance.InstanceIds}}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -380,12 +405,12 @@ Resources:
 #          - name: InstallWindowsUpdates
 #            action: aws:runCommand
 #            maxAttempts: 3
-#            onFailure: "step:TerminateInstance"
+#            onFailure: "step:CancelSpotRequest"
 #            timeoutSeconds: 14400
 #            inputs:
 #              DocumentName: AWS-InstallWindowsUpdates
 #              InstanceIds:
-#                - "{{ LaunchInstance.InstanceIds }}"
+#                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
 #              CloudWatchOutputConfig:
 #                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
 #                CloudWatchOutputEnabled: true
@@ -396,12 +421,12 @@ Resources:
           - name: RunSysprepGeneralize
             action: aws:runCommand
             maxAttempts: 3
-            onFailure: "step:TerminateInstance"
+            onFailure: "step:CancelSpotRequest"
             timeoutSeconds: 600
             inputs:
               DocumentName: AWSEC2-RunSysprep
               InstanceIds:
-                - "{{LaunchInstance.InstanceIds}}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CloudWatchOutputConfig:
                 CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
                 CloudWatchOutputEnabled: true
@@ -412,19 +437,19 @@ Resources:
             action: aws:changeInstanceState
             maxAttempts: 3
             timeoutSeconds: 7200
-            onFailure: Abort
+            onFailure: "step:CancelSpotRequest"
             inputs:
               InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               CheckStateOnly: false
               DesiredState: stopped
 
           - name: CreateImage
             action: aws:createImage
             maxAttempts: 3
-            onFailure: Abort
+            onFailure: "step:CancelSpotRequest"
             inputs:
-              InstanceId: "{{ LaunchInstance.InstanceIds }}"
+              InstanceId: "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE }}"
               NoReboot: false
               ImageDescription: !Sub "CloudRIG gaming image for {{ InstanceType }} based on {{ SourceOSName }} v${Version}"
@@ -432,7 +457,7 @@ Resources:
           - name: CreateTagsForImage
             action: aws:createTags
             maxAttempts: 1
-            onFailure: Continue
+            onFailure: "step:CancelSpotRequest"
             inputs:
               ResourceType: EC2
               ResourceIds:
@@ -464,7 +489,7 @@ Resources:
           - name: CopyImageInRegions
             action: aws:executeScript
             timeoutSeconds: 45
-            onFailure: Abort
+            onFailure: "step:CancelSpotRequest"
             inputs:
               Runtime: python3.7
               Handler: copyImageInAllRegions
@@ -487,6 +512,17 @@ Resources:
                       SourceRegion='eu-west-1'
                     )
 
+          - name: CancelSpotRequest
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Service: ec2
+              Api: CancelSpotInstanceRequests
+              SpotInstanceRequestIds:
+                - "{{ LaunchInstanceAsSpot.RequestId }}"
+
           - name: TerminateInstance
             action: aws:changeInstanceState
             maxAttempts: 3
@@ -494,8 +530,9 @@ Resources:
             isEnd: true
             inputs:
               InstanceIds:
-                - "{{ LaunchInstance.InstanceIds }}"
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
               DesiredState: terminated
+
 
         outputs:
           - CreateImage.ImageId
