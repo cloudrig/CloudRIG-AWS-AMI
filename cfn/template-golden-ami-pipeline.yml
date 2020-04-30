@@ -240,7 +240,7 @@ Resources:
                   - "{{ SecurityGroupId }}"
             outputs:
               - Name: RequestId
-                Selector: "$.requestId"
+                Selector: "$.SpotInstanceRequests[0].SpotInstanceRequestId"
                 Type: String
 
           - name: SleepForSpotRequestFullfill
@@ -260,7 +260,7 @@ Resources:
                 - "{{ LaunchInstanceAsSpot.RequestId }}"
             outputs:
               - Name: InstanceId
-                Selector: "$.spotInstanceRequestSet[0].instanceId"
+                Selector: "$.SpotInstanceRequests[0].InstanceId"
                 Type: String
 
           - name: WaitForSpotInstanceReady
