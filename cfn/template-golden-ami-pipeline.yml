@@ -400,7 +400,7 @@ Resources:
               Handler: copyImageInAllRegions
               InputPayload:
                 ImageId: "{{ CreateImage.ImageId }}"
-                ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE }}"
+                ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE_TIME }}"
                 Regions: "{{ AdditionalTargetRegions }}"
               Script: |-
                 import boto3
