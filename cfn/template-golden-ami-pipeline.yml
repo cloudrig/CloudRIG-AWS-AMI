@@ -238,6 +238,13 @@ Resources:
                 SubnetId: "{{ SubnetId }}"
                 SecurityGroupIds:
                   - "{{ SecurityGroupId }}"
+                BlockDeviceMappings:
+                  - DeviceName: "/dev/sda1"
+                    Ebs:
+                      VolumeType: io1
+                      VolumeSize: 50
+                  - DeviceName: "/dev/sdc"
+                    VirtualName: "ephemeral0"
             outputs:
               - Name: RequestId
                 Selector: "$.SpotInstanceRequests[0].SpotInstanceRequestId"
@@ -329,71 +336,6 @@ Resources:
                 CloudWatchOutputEnabled: true
               Parameters:
                 allowDowngrade: 'false'
-
-          # Upgrade some drivers
-          - name: UpdateAWSPVDriver
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-ConfigureAWSPackage
-              InstanceIds:
-                - "{{LaunchInstanceAsSpotDetails.InstanceId}}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                name: AWSPVDriver
-                action: Install
-
-          - name: UpdateAWSEnaNetworkDriver
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-ConfigureAWSPackage
-              InstanceIds:
-                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                name: AwsEnaNetworkDriver
-                action: Install
-
-          - name: UpdateAWSNVMe
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-ConfigureAWSPackage
-              InstanceIds:
-                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                name: AWSNVMe
-                action: Install
-
-#          # Install the Windows Updates
-#          - name: InstallWindowsUpdates
-#            action: aws:runCommand
-#            maxAttempts: 3
-#            onFailure: "step:CancelSpotRequest"
-#            timeoutSeconds: 14400
-#            inputs:
-#              DocumentName: AWS-InstallWindowsUpdates
-#              InstanceIds:
-#                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-#              CloudWatchOutputConfig:
-#                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-#                CloudWatchOutputEnabled: true
-#              Parameters:
-#                Action: Install
 
           # As the scripts can only be executed through RDP (as the session needs to be opened), we wait here for the
           # confirmation that the tools has been manually installed.
