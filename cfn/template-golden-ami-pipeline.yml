@@ -404,7 +404,7 @@ Resources:
                 Regions: "{{ AdditionalTargetRegions }}"
               Script: |-
                 import boto3
-                def crossRegionImageCopy(events,context):
+                def copyImageInAllRegions(events,context):
                   newImageId = events['ImageId']
                   newImageName = events['ImageName']
                   for region in events['Regions']:
