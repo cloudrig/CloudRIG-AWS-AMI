@@ -400,9 +400,9 @@ Resources:
           - name: ApproveInstallationScriptFinished
             action: aws:approve
             onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 900
+            timeoutSeconds: 1800
             inputs:
-              Message: "Please install the CloudRIG tools before approving"
+              Message: Please install the CloudRIG tools before approving
               MinRequiredApprovals: 1
               Approvers:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:root"
@@ -417,7 +417,7 @@ Resources:
               DocumentName: AWS-RestartEC2Instance
               RuntimeParameters:
                 InstanceId:
-                  - "{{ LaunchInstanceAsSpotDetails.InstanceIds }}"
+                  - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
 
           # Sysprem the instance
           - name: RunSysprepGeneralize

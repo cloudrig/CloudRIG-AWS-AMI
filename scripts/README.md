@@ -8,14 +8,16 @@ to make your life easier.
 It's provided with no warranty, so use it at your own risk.
 
 ## Installation
-
+Example (version needs to be updated)
+```
 $ErrorActionPreference = "Stop"
-'[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"'
-'New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null'
-Copy-S3Object -BucketName "{{ ArtefactsS3BucketName }}" -Key "v{{ Version }}/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
+[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null
+Copy-S3Object -BucketName "cloudrig-amifactory" -Key "v1.0/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
 Expand-Archive "C:\CloudRIGTemp\cloudrig-windows-install.zip" -DestinationPath "C:\CloudRIGTemp\cloudrig-windows-install\"
 cd "C:\CloudRIGTemp\cloudrig-windows-install\"
-'& ".\Loader.ps1"'
+& ".\Loader.ps1"
+```
 
 
 This tool supports:

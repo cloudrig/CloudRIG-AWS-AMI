@@ -552,8 +552,8 @@ Function InstallViGEmBus {
 
 Function CreateFireWallRule {
 #Creates Parsec Firewall Rule in Windows Firewall
-#Write-host "Creating Parsec Firewall Rule"
-#New-NetFirewallRule -DisplayName "Parsec" -Direction Inbound -Program "C:\Program Files\Parsec\Parsecd.exe" -Profile Private,Public -Action Allow -Enabled True | Out-Null
+Write-host "Creating Rainway Firewall Rule"
+# New-NetFirewallRule -DisplayName "Rainway" -Direction Inbound -Program "C:\Program Files\Rainway\Parsecd.exe" -Profile Private,Public -Action Allow -Enabled True | Out-Null
 }
 
 Function CreateParsecService {
@@ -712,4 +712,4 @@ provider-specific
 
 # Execute the GPU Updater in silent mode
 cd $env:USERPROFILE\AppData\Roaming\CloudRIGLoader
-powershell.exe -ExecutionPolicy Bypass -File "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false -DoNotReboot true
+& "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false -DoNotReboot true
