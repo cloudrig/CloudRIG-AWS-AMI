@@ -226,8 +226,7 @@ Resources:
             inputs:
               Service: ec2
               Api: RequestSpotInstances
-              Type: one-time
-              BlockDurationMinutes: 60
+              Type: persistent
               InstanceCount: 1
               LaunchSpecification:
                 ImageId: "{{ SourceAmiId }}"
@@ -239,10 +238,6 @@ Resources:
                 SecurityGroupIds:
                   - "{{ SecurityGroupId }}"
                 BlockDeviceMappings:
-                  - DeviceName: "/dev/sda1"
-                    Ebs:
-                      VolumeType: io1
-                      VolumeSize: 50
                   - DeviceName: "/dev/sdc"
                     VirtualName: "ephemeral0"
             outputs:
@@ -351,17 +346,25 @@ Resources:
 
           # Reboot to take into account the changes
           - name: RebootForInstallationScriptFinished
-            action: aws:executeAutomation
-            maxAttempts: 3
-            timeoutSeconds: 3600
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 1
             onFailure: "step:CancelSpotRequest"
             inputs:
-              DocumentName: AWS-RestartEC2Instance
-              RuntimeParameters:
-                InstanceId:
-                  - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+              Service: ec2
+              Api: RebootInstances
+              InstanceIds:
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+            outputs:
+              - Name: RequestId
+                Selector: "$.SpotInstanceRequests[0].SpotInstanceRequestId"
+                Type: String
+          - name: SleepToWaitForReboot
+            action: aws:sleep
+            inputs:
+              Duration: PT30S
 
-          # Sysprem the instance
+          # Sysprep the instance
           - name: RunSysprepGeneralize
             action: aws:runCommand
             maxAttempts: 3
