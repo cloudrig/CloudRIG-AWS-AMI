@@ -1,4 +1,4 @@
-﻿$path = [Environment]::GetFolderPath("Desktop")
+$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
@@ -423,7 +423,7 @@ function aws-setup {
     Write-Output "VNC has been installed on this computer using Port 5900 and Password 4ubg9sde"
 
     Write-Output "Initializing the ephemeral drives..."
-    C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeDisks.ps1
+    & "C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeDisks.ps1"
 }
 
 #Creates shortcut for the GPU Updater tool
