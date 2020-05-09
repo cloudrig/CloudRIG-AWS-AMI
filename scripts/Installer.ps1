@@ -1,4 +1,4 @@
-$path = [Environment]::GetFolderPath("Desktop")
+﻿$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
@@ -79,6 +79,7 @@ return $false
 function remove-existing-shortcuts-desktop {
     Write-Host "Removing existing shotcuts on the Desktop..."
     Get-ChildItem -Path "$env:USERPROFILE\Desktop\" *.lnk | foreach { Remove-Item -Path $_.FullName }
+    Get-ChildItem -Path "$env:USERPROFILE\Desktop\" *.website | foreach { Remove-Item -Path $_.FullName }
 }
 
 #Create CloudRIGTemp folder in C Drive
@@ -115,8 +116,8 @@ function download-softwares-installers {
     (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
     Write-host "`  - Success!"
     Write-Host "  * 7Zip"
-    $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
-    (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe")
+    $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html  | Out-Null
+    (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe") | Out-Null
     Write-host "`  - Success!"
     Write-Host "  * Devcon" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "C:\CloudRIGTemp\Devcon\devcon.exe" | Out-Null
@@ -126,7 +127,7 @@ function download-softwares-installers {
     Write-host "`  - Success!"
     Write-Host "  * VC Redist 2015" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" | Out-Null
-    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe"
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe" | Out-Null
     Write-host "`  - Success!"
     Write-Host "  * VC Redist 2017" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" | Out-Null
