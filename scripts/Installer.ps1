@@ -76,6 +76,10 @@ return $false
 
 }
 
+function remove-existing-shortcuts-desktop {
+    Write-Host "Removing existing shotcuts on the Desktop..."
+    Get-ChildItem -Path "$env:USERPROFILE\Desktop\" *.lnk | foreach { Remove-Item -Path $_.FullName }
+}
 
 #Create CloudRIGTemp folder in C Drive
 function create-directories {
@@ -96,63 +100,60 @@ Stop-Process -Name Explorer -Force
 }
 
 #download-files-S3
-function download-resources {
+function download-softwares-installers {
     Write-Output "Downloading tools..."
-    Write-Host "Downloading DirectX" -NoNewline
+    Write-Host "  * DirectX" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\CloudRIGTemp\Apps\directx_Jun2010_redist.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading GPU Update tool" -NoNewline
+    Write-Host "  * GPU Update tool" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$env:APPDATA\CloudRIGLoader\GPU Updater Tool.ps1")
     Write-host "`  - Success!"
-    Write-Host "Downloading Chrome" -NoNewline
+    Write-Host "  * Chrome" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://dl.google.com/tag/s/dl/chrome/install/googlechromestandaloneenterprise64.msi", "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi")
     Write-host "`  - Success!"
-    Write-Host "Downloading Rainway" -NoNewline
+    Write-Host "  * Rainway" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading 7Zip"
+    Write-Host "  * 7Zip"
     $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
     (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading Devcon" -NoNewline
+    Write-Host "  * Devcon" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "C:\CloudRIGTemp\Devcon\devcon.exe" | Out-Null
     Write-host "`  - Success!"
-    Write-Host "Downloading VC Redist 2010" -NoNewline
+    Write-Host "  * VC Redist 2010" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2010_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" | Out-Null
     Write-host "`  - Success!"
-    Write-Host "Downloading VC Redist 2015" -NoNewline
+    Write-Host "  * VC Redist 2015" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" | Out-Null
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2015_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe"
     Write-host "`  - Success!"
-    Write-Host "Downloading VC Redist 2017" -NoNewline
+    Write-Host "  * VC Redist 2017" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" | Out-Null
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" | Out-Null
     Write-host "`  - Success!"
-    Write-Host "Downloading SetDefaultBrowser" -NoNewline
+    Write-Host "  * SetDefaultBrowser" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/kolbicz/SetDefaultBrowser.exe" -LocalFile "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" | Out-Null
     Write-host "`  - Success!"
 }
 
 
 #install-base-files-silently
-function install-windows-features {
+function install-softwares {
     Write-Output "Installing tools..."
 
-    Write-Host "  - Chrome" -NoNewline
+    Write-Host "  * Chrome" -NoNewline
     start-process -filepath "C:\Windows\System32\msiexec.exe" -ArgumentList '/qn /i "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi"' -Wait
     set-default-browser
     Write-host "`  - Success!"
 
-    Write-Host "  - Chrome" -NoNewline
+    Write-Host "  * Direct X" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\directx_jun2010_redist.exe" -ArgumentList '/T:C:\CloudRIGTemp\DirectX /Q'-wait
-    Write-host "`  - Success!"
-
-    Write-Host "  - Direct X" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\DirectX\DXSETUP.EXE" -ArgumentList '/silent' -wait
     Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
     Write-host "`  - Success!"
 
-    Write-Host "  - VC Redistribuable" -NoNewline
+    Write-Host "  * VC Redist" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe" -ArgumentList '/install /passive /norestart' -wait
@@ -160,19 +161,19 @@ function install-windows-features {
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
     Write-host "`  - Success!"
 
-    Write-Host "  - Rainway" -NoNewline
+    Write-Host "  * Rainway" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
     Write-host "`  - Success!"
 
-    Write-Host "  - 7zip" -NoNewline
+    Write-Host "  * 7zip" -NoNewline
     Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
     Write-host "`  - Success!"
 
-    Write-Host "  - Windows Direct Play" -NoNewline
+    Write-Host "  * Windows Direct Play" -NoNewline
     Install-WindowsFeature Direct-Play | Out-Null
     Write-host "`  - Success!"
 
-    Write-Host "  - Windows Net Framework" -NoNewline
+    Write-Host "  * Windows Net Framework" -NoNewline
     Install-WindowsFeature Net-Framework-Core | Out-Null
     Write-host "`  - Success!"
 
@@ -180,7 +181,6 @@ function install-windows-features {
 }
 
 function set-default-browser {
-    Write-Host "Setting Chrome as the default browser and in the taskbar..."
     Start-Process "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" -ArgumentList 'HKLM "Google Chrome"' -Wait
     $Target = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
     $KeyPath1  = "HKLM:\SOFTWARE\Classes"
@@ -451,32 +451,32 @@ Function provider-specific {
         Write-Output "No GPU Detected, skipping provider specific tasks"
 
     } Else {
-
-        if($gputype.substring(13,8) -eq "DEV_13F2") {
+        $devicename = $gputype.split('&')[1]
+        if($devicename -eq "DEV_13F2") {
             #AWS G3.4xLarge M60
             Write-Output "Tesla M60 Detected"
             autologin
             aws-setup
         }
 
-        ElseIF($gputype.Substring(13,8) -eq "DEV_118A") {
+        ElseIF($devicename -eq "DEV_118A") {
             #AWS G2.2xLarge K520
             autologin
             aws-setup
             Write-Output "GRID K520 Detected"
         }
 
-        ElseIF($gputype.Substring(13,8) -eq "DEV_1BB1") {
+        ElseIF($devicename -eq "DEV_1BB1") {
             #Paperspace P4000
             Write-Output "Quadro P4000 Detected"
         }
 
-        Elseif($gputype.Substring(13,8) -eq "DEV_1BB0") {
+        Elseif($devicename -eq "DEV_1BB0") {
             #Paperspace P5000
             Write-Output "Quadro P5000 Detected"
         }
 
-        Elseif($gputype.substring(13,8) -eq "DEV_15F8") {
+        Elseif($devicename -eq "DEV_15F8") {
             #Tesla P100
             Write-Output "Tesla P100 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
@@ -485,7 +485,7 @@ Function provider-specific {
             aws-setup
         }
 
-        Elseif($gputype.substring(13,8) -eq "DEV_1BB3") {
+        Elseif($devicename -eq "DEV_1BB3") {
             #Tesla P4
             Write-Output "Tesla P4 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
@@ -494,7 +494,7 @@ Function provider-specific {
             aws-setup
         }
 
-        Elseif($gputype.substring(13,8) -eq "DEV_1EB8") {
+        Elseif($devicename -eq "DEV_1EB8") {
             #Tesla T4
             Write-Output "Tesla T4 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
@@ -503,7 +503,7 @@ Function provider-specific {
             aws-setup
         }
 
-        Elseif($gputype.substring(13,8) -eq "DEV_1430") {
+        Elseif($devicename -eq "DEV_1430") {
             #Quadro M2000
             Write-Output "Quadro M2000 Detected"
             autologin
@@ -514,26 +514,6 @@ Function provider-specific {
             write-host "The installed GPU is not currently supported, skipping provider specific tasks"
         }
     }
-}
-
-
-
-function Install7Zip {
-#7Zip is required to extract the some exe File
-
-}
-
-Function ExtractInstallFiles {
-#Move Parsec Files into correct location
-#Write-Host "Moving files to the correct location"
-#cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\parsec-windows.exe -oC:\CloudRIGTemp\Apps\Parsec-Windows -y' | Out-Null
-#if((Test-Path -Path 'C:\Program Files\Parsec')-eq $true) {} Else {New-Item -Path 'C:\Program Files\Parsec' -ItemType Directory | Out-Null}
-#if((Test-Path -Path "C:\Program Files\Parsec\skel") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\skel -Destination 'C:\Program Files\Parsec' | Out-Null}
-#if((Test-Path -Path "C:\Program Files\Parsec\vigem") -eq $true) {} Else  {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\vigem -Destination 'C:\Program Files\Parsec' | Out-Null}
-#if((Test-Path -Path "C:\Program Files\Parsec\wscripts") -eq $true) {} Else  {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\wscripts -Destination 'C:\Program Files\Parsec' | Out-Null}
-#if((Test-Path -Path "C:\Program Files\Parsec\parsecd.exe") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\parsecd.exe -Destination 'C:\Program Files\Parsec' | Out-Null}
-#if((Test-Path -Path "C:\Program Files\Parsec\pservice.exe") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\pservice.exe -Destination 'C:\Program Files\Parsec' | Out-Null}
-#Start-Sleep 1
 }
 
 #Checks for Server 2019 and asks user to install Windows Xbox Accessories in order to let their controller work
@@ -547,95 +527,52 @@ Function Server2019Controller {
     }
 }
 
-Function InstallViGEmBus {
-#Required for Controller Support.
-#Write-Host "Installing ViGEmBus - https://github.com/ViGEm/ViGEmBus"
-#$Vigem = @{}
-#$Vigem.DriverFile = "C:\Program Files\Parsec\Vigem\ViGEmBus.cat";
-#$Vigem.CertName = 'C:\Program Files\Parsec\Vigem\Wohlfeil_IT_e_U_.cer';
-#$Vigem.ExportType = [System.Security.Cryptography.X509Certificates.X509ContentType]::Cert;
-#$Vigem.Cert = (Get-AuthenticodeSignature -filepath $vigem.DriverFile).SignerCertificate;
-#$Vigem.CertInstalled = if ((Get-ChildItem -Path Cert:\CurrentUser\TrustedPublisher | Where-Object Subject -Like "*CN=Wohlfeil.IT e.U., O=Wohlfeil.IT e.U.*" ) -ne $null) {$True}
-#Else {$false}
-#if ($vigem.CertInstalled -eq $true) {
-# cmd.exe /c '"C:\Program Files\Parsec\vigem\10\x64\devcon.exe" install "C:\Program Files\Parsec\vigem\10\ViGEmBus.inf" Nefarius\ViGEmBus\Gen1' | Out-Null
-#}
-#Else {[System.IO.File]::WriteAllBytes($Vigem.CertName, $Vigem.Cert.Export($Vigem.ExportType));
-#Import-Certificate -CertStoreLocation Cert:\LocalMachine\TrustedPublisher -FilePath 'C:\Program Files\Parsec\Vigem\Wohlfeil_IT_e_U_.cer' | Out-Null
-#Start-Sleep 5
-#cmd.exe /c '"C:\Program Files\Parsec\vigem\devcon.exe" install "C:\Program Files\Parsec\vigem\ViGEmBus.inf" Root\ViGEmBus' | Out-Null
-#}
-}
-
 Function CreateFireWallRule {
 #Creates Parsec Firewall Rule in Windows Firewall
 Write-host "Creating Rainway Firewall Rule"
 # New-NetFirewallRule -DisplayName "Rainway" -Direction Inbound -Program "C:\Program Files\Rainway\Parsecd.exe" -Profile Private,Public -Action Allow -Enabled True | Out-Null
 }
 
-Function CreateParsecService {
-#Creates Parsec Service
-#Write-host "Creating Parsec Service"
-#cmd.exe /c 'sc.exe Create "Parsec" binPath= "\"C:\Program Files\Parsec\pservice.exe\"" start= "auto"' | Out-Null
-#sc.exe Start 'Parsec' | Out-Null
-}
-
-Function DownloadParsecServiceManager {
-#[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
-#(New-Object System.Net.WebClient).DownloadFile("https://github.com/jamesstringerparsec/Parsec-Service-Manager/blob/master/Launcher.exe?raw=true", "$ENV:UserProfile\Desktop\ParsecServiceManager.exe") | Unblock-File
-}
-
-Function InstallParsec {
-    Write-Host "Installing Parsec"
-    Install7Zip
-    ExtractInstallFiles
-    InstallViGEmBus
-    CreateFireWallRule
-    CreateParsecService
-    DownloadParsecServiceManager
-    # Write-host "Successfully installed Parsec"
-}
-
 function Install-Gaming-Apps {
     Write-Output "Downloading gaming apps..."
-    Write-Host "Downloading Steam" -NoNewline
+    Write-Host "  * Steam" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe", "C:\CloudRIGTemp\Apps\SteamSetup.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading Discord" -NoNewline
+    Write-Host "  * Discord" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://discordapp.com/api/download?platform=win", "C:\CloudRIGTemp\Apps\DiscordSetup.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading Origin" -NoNewline
+    Write-Host "  * Origin" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://origin-a.akamaihd.net/Origin-Client-Download/origin/live/OriginThinSetup.exe", "C:\CloudRIGTemp\Apps\OriginThinSetup.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading Battle.net" -NoNewline
+    Write-Host "  * Battle.net" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&version=LIVE&gameProgram=BATTLENET_APP", "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe")
     Write-host "`  - Success!"
-    Write-Host "Downloading Epic Games launcher" -NoNewline
+    Write-Host "  * Epic Games launcher" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi", "C:\CloudRIGTemp\Apps\EpicGamesLauncherInstaller.msi")
     Write-host "`  - Success!"
-    Write-Host "Downloading uPlay" -NoNewline
+    Write-Host "  * uPlay" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://ubistatic3-a.akamaihd.net/orbit/launcher_installer/UplayInstaller.exe", "C:\CloudRIGTemp\Apps\UplayInstaller.exe")
     Write-host "`  - Success!"
 
 
     Write-Output "Installing gaming apps..."
-    Write-Host "Installing Steam" -NoNewline
+    Write-Host "  * Steam" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\SteamSetup.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
-    Write-Host "Installing Discord" -NoNewline
+    Write-Host "  * Discord" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\DiscordSetup.exe"
     Write-host "`  - Success!"
-    Write-Host "Installing Origin" -NoNewline
+    Write-Host "  * Origin" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\OriginThinSetup.exe" -ArgumentList '/SILENT'
     Write-host "`  - Success!"
     # No silent install available :/
     #Write-Host "Installing Battle.net" -NoNewline
     #Start-Process "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe" -ArgumentList '/S /Silent /SILENT /q /QUIET'
     #Write-host "`  - Success!"
-    Write-Host "Installing Epic Games Launcher" -NoNewline
+    Write-Host "  * Epic Games Launcher" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\EpicGamesLauncherInstaller.msi" -ArgumentList '/qn /norestart'
     Write-host "`  - Success!"
-    Write-Host "Installing uPlay" -NoNewline
+    Write-Host "  * uPlay" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\UplayInstaller.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
 
@@ -650,6 +587,12 @@ function disable-devices {
     Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Get-PnpDevice| where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
+}
+
+function update-gpu {
+    # Execute the GPU Updater in silent mode
+    cd $env:USERPROFILE\AppData\Roaming\CloudRIGLoader
+    & "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false -DoNotReboot true
 }
 
 #Cleanup
@@ -700,10 +643,10 @@ setupEnvironment
 addRegItems
 create-directories
 disable-iesecurity
-download-resources
-install-windows-features
+remove-existing-shortcuts-desktop
+download-softwares-installers
+install-softwares
 set-update-policy 
-force-close-apps 
 disable-network-window
 disable-logout
 disable-lock
@@ -712,20 +655,18 @@ show-file-extensions
 enhance-pointer-precision
 enable-mousekeys
 set-time
-set-wallpaper
-Create-ClearProxy-Shortcut
-Create-AutoShutdown-Shortcut
-Create-One-Hour-Warning-Shortcut
 disable-server-manager
 Install-Gaming-Apps
 Start-Sleep -s 5
 Server2019Controller
 gpu-update-shortcut
 disable-devices
+set-wallpaper
+Create-ClearProxy-Shortcut
+Create-AutoShutdown-Shortcut
+Create-One-Hour-Warning-Shortcut
 clean-up
 clean-up-recent
+force-close-apps
 provider-specific
-
-# Execute the GPU Updater in silent mode
-cd $env:USERPROFILE\AppData\Roaming\CloudRIGLoader
-& "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1" -Confirm false -DoNotReboot true
+update-gpu
