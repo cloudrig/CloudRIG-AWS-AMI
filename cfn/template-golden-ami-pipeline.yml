@@ -290,48 +290,6 @@ Resources:
               DesiredValues:
                 - running
 
-          # Update the EC2 Config
-          - name: UpdateEC2Config
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-InstallPowerShellModule
-              InstanceIds:
-                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                executionTimeout: '7200'
-                source: https://aws-ssm-downloads-{{global:REGION}}.s3.amazonaws.com/PSModules/AWSUpdateWindowsInstance/Latest/AWSUpdateWindowsInstance.zip
-                sourceHash: 14CAD416F4A054894EBD2091EA4B99E542368BE5895BDD466B567C1ABA87C87C
-                commands:
-                  - Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force
-                  - Import-Module AWSUpdateWindowsInstance
-                  - if ([Environment]::OSVersion.Version.Major -ge 10) {
-                  - "  Install-AwsUwiEC2Launch -Id {{ automation:EXECUTION_ID }}"
-                  - "} else {"
-                  - "  Install-AwsUwiEC2Config -Id {{ automation:EXECUTION_ID }}"
-                  - "}"
-
-          # Update the SSM Agent (downgrade not allowed)
-          - name: UpdateSSMAgent
-            action: aws:runCommand
-            maxAttempts: 3
-            onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 600
-            inputs:
-              DocumentName: AWS-UpdateSSMAgent
-              InstanceIds:
-                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-              CloudWatchOutputConfig:
-                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
-                CloudWatchOutputEnabled: true
-              Parameters:
-                allowDowngrade: 'false'
-
           # As the scripts can only be executed through RDP (as the session needs to be opened), we wait here for the
           # confirmation that the tools has been manually installed.
           - name: ApproveInstallationScriptFinished
