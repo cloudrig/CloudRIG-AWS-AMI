@@ -137,20 +137,46 @@ function download-resources {
 #install-base-files-silently
 function install-windows-features {
     Write-Output "Installing tools..."
+
+    Write-Host "  - Chrome" -NoNewline
     start-process -filepath "C:\Windows\System32\msiexec.exe" -ArgumentList '/qn /i "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi"' -Wait
     set-default-browser
+    Write-host "`  - Success!"
+
+    Write-Host "  - Chrome" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\directx_jun2010_redist.exe" -ArgumentList '/T:C:\CloudRIGTemp\DirectX /Q'-wait
+    Write-host "`  - Success!"
+
+    Write-Host "  - Direct X" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\DirectX\DXSETUP.EXE" -ArgumentList '/silent' -wait
+    Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
+    Write-host "`  - Success!"
+
+    Write-Host "  - VC Redistribuable" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
+    Write-host "`  - Success!"
+
+    Write-Host "  - Rainway" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
+    Write-host "`  - Success!"
+
+    Write-Host "  - 7zip" -NoNewline
     Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
+    Write-host "`  - Success!"
+
+    Write-Host "  - Windows Direct Play" -NoNewline
     Install-WindowsFeature Direct-Play | Out-Null
+    Write-host "`  - Success!"
+
+    Write-Host "  - Windows Net Framework" -NoNewline
     Install-WindowsFeature Net-Framework-Core | Out-Null
-    Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
+    Write-host "`  - Success!"
+
+
 }
 
 function set-default-browser {
@@ -349,18 +375,6 @@ function Create-One-Hour-Warning-Shortcut{
     $ShortCut.Save()
 }
 
-#create shortcut for Rainway
-function create-shortcut-rainway {
-    Write-Output "Creating Rainway app shortcut to Desktop..."
-    $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Rainway.lnk")
-    $ShortCut.TargetPath="C:\Program Files\Rainway\bootstrapper.exe"
-    $ShortCut.WorkingDirectory = "C:\Program Files\Rainway\";
-    $ShortCut.WindowStyle = 0;
-    $ShortCut.Description = "Rainway";
-    $ShortCut.Save()
-}
-
 #Disables Server Manager opening on Startup
 function disable-server-manager {
 Write-Output "Disable Auto Opening Server Manager"
@@ -407,6 +421,9 @@ function aws-setup {
     Set-Location $OriginalLocation
     Set-Service -Name audiosrv -StartupType Automatic
     Write-Output "VNC has been installed on this computer using Port 5900 and Password 4ubg9sde"
+
+    Write-Output "Initializing the ephemeral drives..."
+    C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeDisks.ps1
 }
 
 #Creates shortcut for the GPU Updater tool
@@ -703,7 +720,6 @@ disable-server-manager
 Install-Gaming-Apps
 Start-Sleep -s 5
 Server2019Controller
-create-shortcut-rainway
 gpu-update-shortcut
 disable-devices
 clean-up

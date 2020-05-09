@@ -40,19 +40,4 @@ Write-Output "Unblocking files just in case"
 Get-ChildItem -Path $path\CloudRIGTemp -Recurse | Unblock-File
 
 Write-Output "Starting the installation script..."
-$pinfo = New-Object System.Diagnostics.ProcessStartInfo
-$pinfo.FileName = "powershell.exe"
-$pinfo.Verb = 'RunAs'
-$pinfo.RedirectStandardError = $true
-$pinfo.RedirectStandardOutput = $true
-$pinfo.UseShellExecute = $false
-$pinfo.Arguments = "-file $path\CloudRIGTemp\Installer.ps1 "
-$p = New-Object System.Diagnostics.Process
-$p.StartInfo = $pinfo
-$p.Start()
-$p.WaitForExit()
-$stdout = $p.StandardOutput.ReadToEnd()
-$stderr = $p.StandardError.ReadToEnd()
-Write-Host "stderr: $stderr"
-Write-Host "stdout: $stdout"
-Write-Host "exit code: " + $p.ExitCode
+& "$path\CloudRIGTemp\Installer.ps1"
