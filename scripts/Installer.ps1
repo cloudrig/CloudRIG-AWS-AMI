@@ -115,8 +115,8 @@ function download-softwares-installers {
     Write-Host "  * Rainway" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
     Write-host "`  - Success!"
-    Write-Host "  * 7Zip"
-    $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html  | Out-Null
+    Write-Host "  * 7Zip" -NoNewline
+    $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
     (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe") | Out-Null
     Write-host "`  - Success!"
     Write-Host "  * Devcon" -NoNewline
@@ -577,8 +577,8 @@ function Install-Gaming-Apps {
     Start-Process "C:\CloudRIGTemp\Apps\UplayInstaller.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
 
-    Write-host "Sleeping 20s to let the installer finish their work"
-    Start-Sleep -Seconds 20
+    Write-host "Sleeping 30s to let the installer finish their work"
+    Start-Sleep -Seconds 30
 }
 
 #Disable Devices
