@@ -355,7 +355,7 @@ Resources:
             onFailure: "step:CancelSpotRequest"
             inputs:
               InstanceId: "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
-              ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE }}"
+              ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE_TIME }}"
               NoReboot: false
               ImageDescription: !Sub "CloudRIG gaming image for {{ InstanceType }} based on {{ SourceOSName }} v${Version}"
 

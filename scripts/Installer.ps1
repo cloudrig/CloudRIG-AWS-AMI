@@ -84,24 +84,24 @@ function remove-existing-shortcuts-desktop {
 
 #Create CloudRIGTemp folder in C Drive
 function create-directories {
-Write-Output "Creating Directories in C:\ Drive"
-if((Test-Path -Path C:\CloudRIGTemp) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null}
-if((Test-Path -Path C:\CloudRIGTemp\Apps) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Apps -ItemType directory | Out-Null}
-if((Test-Path -Path C:\CloudRIGTemp\DirectX) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\DirectX -ItemType directory | Out-Null}
-if((Test-Path -Path C:\CloudRIGTemp\Drivers) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Drivers -ItemType Directory | Out-Null}
-if((Test-Path -Path C:\CloudRIGTemp\Devcon) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Devcon -ItemType Directory | Out-Null}
+    Write-Output "Creating Directories in C:\ Drive"
+    if((Test-Path -Path C:\CloudRIGTemp) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null}
+    if((Test-Path -Path C:\CloudRIGTemp\Apps) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Apps -ItemType directory | Out-Null}
+    if((Test-Path -Path C:\CloudRIGTemp\DirectX) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\DirectX -ItemType directory | Out-Null}
+    if((Test-Path -Path C:\CloudRIGTemp\Drivers) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Drivers -ItemType Directory | Out-Null}
+    if((Test-Path -Path C:\CloudRIGTemp\Devcon) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Devcon -ItemType Directory | Out-Null}
 }
 
 #disable IE security
 function disable-iesecurity {
-Write-Output "Enabling Web Browsing on IE (Disabling IE Security)"
-Set-Itemproperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -name IsInstalled -value 0 -force | Out-Null
-Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name IsInstalled -Value 0 -Force | Out-Null
-Stop-Process -Name Explorer -Force
+    Write-Output "Enabling Web Browsing on IE (Disabling IE Security)"
+    Set-Itemproperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -name IsInstalled -value 0 -force | Out-Null
+    Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name IsInstalled -Value 0 -Force | Out-Null
+    Stop-Process -Name Explorer -Force
 }
 
-#download-files-S3
-function download-softwares-installers {
+# Install all the non-gaming tools (vc redist...)
+function install-softwares {
     Write-Output "Downloading tools..."
     Write-Host "  * DirectX" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://download.microsoft.com/download/8/4/A/84A35BF1-DAFE-4AE8-82AF-AD2AE20B6B14/directx_Jun2010_redist.exe", "C:\CloudRIGTemp\Apps\directx_Jun2010_redist.exe")
@@ -136,24 +136,17 @@ function download-softwares-installers {
     Write-Host "  * SetDefaultBrowser" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/kolbicz/SetDefaultBrowser.exe" -LocalFile "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" | Out-Null
     Write-host "`  - Success!"
-}
 
-
-#install-base-files-silently
-function install-softwares {
     Write-Output "Installing tools..."
-
     Write-Host "  * Chrome" -NoNewline
     start-process -filepath "C:\Windows\System32\msiexec.exe" -ArgumentList '/qn /i "C:\CloudRIGTemp\Apps\googlechromestandaloneenterprise64.msi"' -Wait
     set-default-browser
     Write-host "`  - Success!"
-
     Write-Host "  * Direct X" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\directx_jun2010_redist.exe" -ArgumentList '/T:C:\CloudRIGTemp\DirectX /Q'-wait
     Start-Process -FilePath "C:\CloudRIGTemp\DirectX\DXSETUP.EXE" -ArgumentList '/silent' -wait
     Remove-Item -Path C:\CloudRIGTemp\DirectX -force -Recurse
     Write-host "`  - Success!"
-
     Write-Host "  * VC Redist" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x86.exe" -ArgumentList '/install /passive /norestart' -wait
@@ -161,24 +154,18 @@ function install-softwares {
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
     Write-host "`  - Success!"
-
     Write-Host "  * Rainway" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
     Write-host "`  - Success!"
-
     Write-Host "  * 7zip" -NoNewline
     Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
     Write-host "`  - Success!"
-
     Write-Host "  * Windows Direct Play" -NoNewline
     Install-WindowsFeature Direct-Play | Out-Null
     Write-host "`  - Success!"
-
     Write-Host "  * Windows Net Framework" -NoNewline
     Install-WindowsFeature Net-Framework-Core | Out-Null
     Write-host "`  - Success!"
-
-
 }
 
 function set-default-browser {
@@ -577,17 +564,20 @@ function Install-Gaming-Apps {
     Start-Process "C:\CloudRIGTemp\Apps\UplayInstaller.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
 
-    Write-host "Sleeping 30s to let the installer finish their work"
-    Start-Sleep -Seconds 30
+    Write-host "Sleeping 60s to let the installers finish their work..."
+    Start-Sleep -Seconds 60
+
+    Server2019Controller
 }
 
 #Disable Devices
 function disable-devices {
-    Write-Output "Disabling devices not required"
+    Write-Output "Disabling not required devices"
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "HDAUDIO\FUNC_01&VEN_10DE&DEV_0083&SUBSYS_10DE11A3*"'
     Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Get-PnpDevice| where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
+    Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1D0F&DEV_1111*"'
 }
 
 function update-gpu {
@@ -643,11 +633,12 @@ Write-Host -foregroundcolor red "
 setupEnvironment
 addRegItems
 create-directories
+
 disable-iesecurity
+disable-devices
+set-wallpaper
 remove-existing-shortcuts-desktop
-download-softwares-installers
-install-softwares
-set-update-policy 
+set-update-policy
 disable-network-window
 disable-logout
 disable-lock
@@ -657,17 +648,20 @@ enhance-pointer-precision
 enable-mousekeys
 set-time
 disable-server-manager
-Install-Gaming-Apps
-Start-Sleep -s 5
-Server2019Controller
+Stop-Process -ProcessName explorer
+
+provider-specific
 gpu-update-shortcut
-disable-devices
-set-wallpaper
+update-gpu
+
+
+install-softwares
+Install-Gaming-Apps
+force-close-apps
+
 Create-ClearProxy-Shortcut
 Create-AutoShutdown-Shortcut
 Create-One-Hour-Warning-Shortcut
+
 clean-up
 clean-up-recent
-force-close-apps
-provider-specific
-update-gpu
