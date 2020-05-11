@@ -119,9 +119,6 @@ function install-softwares {
     $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
     (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe") | Out-Null
     Write-host "`  - Success!"
-    Write-Host "  * Devcon" -NoNewline
-    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "C:\CloudRIGTemp\Devcon\devcon.exe" | Out-Null
-    Write-host "`  - Success!"
     Write-Host "  * VC Redist 2010" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2010_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2010_x86.exe" | Out-Null
     Write-host "`  - Success!"
@@ -135,6 +132,12 @@ function install-softwares {
     Write-host "`  - Success!"
     Write-Host "  * SetDefaultBrowser" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/kolbicz/SetDefaultBrowser.exe" -LocalFile "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" | Out-Null
+    Write-host "`  - Success!"
+    Write-Host "  * TightVNC" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile($(((Invoke-WebRequest -Uri https://www.tightvnc.com/download.php -UseBasicParsing).Links.OuterHTML -like "*Installer for Windows (64-bit)*").split('"')[1].split('"')[0]), "C:\CloudRIGTemp\Apps\tightvnc.msi")
+    Write-host "`  - Success!"
+    Write-Host "  * Razer Surround" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("http://rzr.to/surround-pc-download", "C:\CloudRIGTemp\Apps\razer-surround-driver.exe")
     Write-host "`  - Success!"
 
     Write-Output "Installing tools..."
@@ -159,6 +162,21 @@ function install-softwares {
     Write-host "`  - Success!"
     Write-Host "  * 7zip" -NoNewline
     Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
+    Write-host "`  - Success!"
+    Write-Host "  * TightVNC" -NoNewline
+    start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value $env:USERNAME | Out-Null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
+    if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
+    Write-host "`  - Success!"
+    Write-Host "  * Razer Surround" -NoNewline
+    ExtractRazerAudio
+    ModidifyManifest
+    $OriginalLocation = Get-Location
+    Set-Location -Path 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\'
+    Start-Process RzUpdateManager.exe
+    Set-Location $OriginalLocation
+    Set-Service -Name audiosrv -StartupType Automatic
     Write-host "`  - Success!"
     Write-Host "  * Windows Direct Play" -NoNewline
     Install-WindowsFeature Direct-Play | Out-Null
@@ -195,8 +213,8 @@ function set-default-browser {
 }
 
 #set update policy
-function set-update-policy {
-    Write-Output "Disabling Windows Update"
+function disable-automatic-updates {
+    Write-Output "Disabling Windows Updates..."
     if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'DoNotConnectToWindowsUpdateInternetLocations') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "DoNotConnectToWindowsUpdateInternetLocations" -Value "1" | Out-Null}
     if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'UpdateServiceURLAlternative') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "UpdateServiceURLAlternative" -Value "http://intentionally.disabled" | Out-Null}
     if((Test-RegistryValue -path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' -value 'WUServer') -eq $true) {Set-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null} else {new-itemproperty -path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Name "WUServer" -Value "http://intentionally.disabled" | Out-Null}
@@ -207,14 +225,14 @@ function set-update-policy {
 
 #set automatic time and timezone
 function set-time {
-    Write-Output "Setting Time to Automatic"
+    Write-Output "Setting Time to Automatic..."
     Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
     Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
 }
 
 #disable new network window
 function disable-network-window {
-Write-Output "Disabling New Network Window"
+    Write-Output "Disabling New Network Window..."
     if((Test-RegistryValue -path HKLM:\SYSTEM\CurrentControlSet\Control\Network -Value NewNetworkWindowOff)-eq $true) {
 
     } Else {
@@ -224,19 +242,19 @@ Write-Output "Disabling New Network Window"
 
 #Enable Pointer Precision 
 function enhance-pointer-precision {
-    Write-Output "Enabling Enhanced Pointer Precision"
+    Write-Output "Enabling Enhanced Pointer Precision..."
     Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
 }
 
 #enable Mouse Keys
 function enable-mousekeys {
-    Write-Output "Enabling Mouse Keys"
+    Write-Output "Enabling Mouse Keys..."
     Set-Itemproperty -Path 'HKCU:\Control Panel\Accessibility\MouseKeys' -Name Flags -Value 63 | Out-Null
 }
 
 #disable shutdown start menu
 function remove-shutdown {
-    Write-Output "Disabling Shutdown Option in Start Menu"
+    Write-Output "Disabling Shutdown Option in Start Menu..."
     New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name NoClose -Value 1 | Out-Null
 }
 
@@ -369,20 +387,12 @@ Write-Output "Disable Auto Opening Server Manager"
 Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null
 }
 
-#AWS Clean up Desktop Items
-function clean-aws {
-remove-item -path "$path\EC2 Feedback.Website"
-Remove-Item -Path "$path\EC2 Microsoft Windows Guide.website"
-}
-
-
 Function ExtractRazerAudio {
     #Move extracts Razer Surround Files into correct location
-    Write-Host "Moving Razer Surround files to the correct location"
     cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\razer-surround-driver.exe -oC:\CloudRIGTemp\Apps\razer-surround-driver -y' | Out-Null
-    }
+}
 
-    Function ModidifyManifest {
+Function ModidifyManifest {
     #modifys the installer manifest to run without interraction
     $InstallerManifest = 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\InstallerManifest.xml'
     $regex = '(?<=<SilentMode>)[^<]*'
@@ -391,25 +401,6 @@ Function ExtractRazerAudio {
 
 #AWS Specific tweaks
 function aws-setup {
-    #clean-aws
-    Write-Output "Installing VNC, and installing audio driver"
-    (New-Object System.Net.WebClient).DownloadFile($(((Invoke-WebRequest -Uri https://www.tightvnc.com/download.php -UseBasicParsing).Links.OuterHTML -like "*Installer for Windows (64-bit)*").split('"')[1].split('"')[0]), "C:\CloudRIGTemp\Apps\tightvnc.msi")
-    (New-Object System.Net.WebClient).DownloadFile("http://rzr.to/surround-pc-download", "C:\CloudRIGTemp\Apps\razer-surround-driver.exe")
-    start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value $env:USERNAME | Out-Null
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
-    if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
-    Write-Host "Installing Razer Surround - it's the Audio Driver - you DON'T need to sign into Razer Synapse" -ForegroundColor Red
-    ExtractRazerAudio
-    ModidifyManifest
-    $OriginalLocation = Get-Location
-    Set-Location -Path 'C:\CloudRIGTemp\Apps\razer-surround-driver\$TEMP\RazerSurroundInstaller\'
-    Write-Output "The Audio Driver, Razer Surround is now installing"
-    Start-Process RzUpdateManager.exe
-    Set-Location $OriginalLocation
-    Set-Service -Name audiosrv -StartupType Automatic
-    Write-Output "VNC has been installed on this computer using Port 5900 and Password 4ubg9sde"
-
     Write-Output "Initializing the ephemeral drives..."
     & "C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeDisks.ps1"
 }
@@ -489,6 +480,9 @@ Function provider-specific {
             if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"} Else {}
             autologin
             aws-setup
+
+            # Disable the second screen
+            cmd.exe /c "displayswitch.exe /internal"
         }
 
         Elseif($devicename -eq "DEV_1430") {
@@ -513,12 +507,6 @@ Function Server2019Controller {
         cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Drivers\Xbox360_64Eng.exe -oC:\CloudRIGTemp\Drivers\Xbox360_64Eng -r -y' | Out-Null
         cmd.exe /c '"PNPUtil.exe" /add-driver C:\CloudRIGTemp\Drivers\Xbox360_64Eng\xbox360\setup64\files\driver\win7\xusb21.inf'
     }
-}
-
-Function CreateFireWallRule {
-#Creates Parsec Firewall Rule in Windows Firewall
-Write-host "Creating Rainway Firewall Rule"
-# New-NetFirewallRule -DisplayName "Rainway" -Direction Inbound -Program "C:\Program Files\Rainway\Parsecd.exe" -Profile Private,Public -Action Allow -Enabled True | Out-Null
 }
 
 function Install-Gaming-Apps {
@@ -573,9 +561,16 @@ function Install-Gaming-Apps {
 #Disable Devices
 function disable-devices {
     Write-Output "Disabling not required devices"
+    Write-Host "  * Downloading Devcon..." -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "C:\CloudRIGTemp\Devcon\devcon.exe" | Out-Null
+    Write-host "`  - Success!"
+
+    Write-host "  * Disabling audio..."
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "HDAUDIO\FUNC_01&VEN_10DE&DEV_0083&SUBSYS_10DE11A3*"'
-    Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
+    Write-host "  * Disabling generic monitors..."
     Get-PnpDevice| where {$_.friendlyname -like "Microsoft Basic Display Adapter" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
+    Get-PnpDevice| where {$_.friendlyname -like "Generic Non-PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
+    Get-PnpDevice| where {$_.friendlyname -like "Generic PNP Monitor" -and $_.status -eq "OK"} | Disable-PnpDevice -confirm:$false
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1013&DEV_00B8*"'
     Start-Process -FilePath "C:\CloudRIGTemp\Devcon\devcon.exe" -ArgumentList '/r disable "PCI\VEN_1D0F&DEV_1111*"'
 }
@@ -635,10 +630,8 @@ addRegItems
 create-directories
 
 disable-iesecurity
-disable-devices
 set-wallpaper
 remove-existing-shortcuts-desktop
-set-update-policy
 disable-network-window
 disable-logout
 disable-lock
@@ -650,14 +643,18 @@ set-time
 disable-server-manager
 Stop-Process -ProcessName explorer
 
-provider-specific
 gpu-update-shortcut
 update-gpu
-
+disable-devices
 
 install-softwares
 Install-Gaming-Apps
 force-close-apps
+provider-specific
+
+# Should be done after all the install, as some of them needs to install Windows Features
+# TEMP - Do not disable for now as we need this for troubleshooting
+# disable-automatic-updates
 
 Create-ClearProxy-Shortcut
 Create-AutoShutdown-Shortcut
