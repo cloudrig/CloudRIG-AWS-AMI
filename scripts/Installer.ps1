@@ -1,4 +1,4 @@
-﻿$path = [Environment]::GetFolderPath("Desktop")
+$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
@@ -130,6 +130,9 @@ function install-softwares {
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" | Out-Null
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2017_x64.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" | Out-Null
     Write-host "`  - Success!"
+    Write-Host "  * VC Redist 2019 (x86 only)" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/vc_redist_2019_x86.exe" -LocalFile "C:\CloudRIGTemp\Apps\vc_redist_2019_x86.exe" | Out-Null
+    Write-host "`  - Success!"
     Write-Host "  * SetDefaultBrowser" -NoNewline
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/kolbicz/SetDefaultBrowser.exe" -LocalFile "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" | Out-Null
     Write-host "`  - Success!"
@@ -156,6 +159,7 @@ function install-softwares {
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2015_x64.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2019_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Write-host "`  - Success!"
     Write-Host "  * Rainway" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
