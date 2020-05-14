@@ -2,15 +2,15 @@
 
 This repository contains the tool used to generated the CloudRIG AWS AMIs. 
 They come with:
-  * Parsec
-  * NVIDIA drivers
+  * Rainway
+  * Latest NVIDIA drivers
   * Razer Surround
-  * DirectX June 2010 Redist
   * Google Chrome
+  * DirectX 10, 11, 12
+  * VC Redist 2010, 2015, 2017, 2019 (both x86 and x64)
   * TightVNC
   * 7Zip
-  * ViGEmBus (for controllers support)
-  * .Net 3.5
+  * .NET Framework
   * Direct Play
   
    
