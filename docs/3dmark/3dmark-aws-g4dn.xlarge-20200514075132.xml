@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<benchmark>
+    <results>
+        <result>
+            <name/>
+            <description/>
+            <passIndex>-1</passIndex>
+            <sourceId>C:\Users\Administrator\Documents\3DMark\3dmark-autosave-20200514075132.3dmark-result</sourceId>
+            <TimeSpyPerformanceGraphicsScore>5398</TimeSpyPerformanceGraphicsScore>
+            <TimeSpyPerformanceCPUScore>1711</TimeSpyPerformanceCPUScore>
+            <TimeSpyPerformance3DMarkScore>4079</TimeSpyPerformance3DMarkScore>
+            <benchmarkRunId>0a2a1a67-c371-4b0a-9429-d32df8e5729c</benchmarkRunId>
+        </result>
+        <result>
+            <name/>
+            <description/>
+            <passIndex>0</passIndex>
+            <sourceId>C:\Users\Administrator\Documents\3DMark\3dmark-autosave-20200514075132.3dmark-result</sourceId>
+            <TimeSpyPerformanceGraphicsScoreForPass>5398</TimeSpyPerformanceGraphicsScoreForPass>
+            <TimeSpyPerformance3DMarkScoreForPass>4079</TimeSpyPerformance3DMarkScoreForPass>
+            <TimeSpyPerformanceCPUScoreForPass>1711</TimeSpyPerformanceCPUScoreForPass>
+            <TimeSpyPerformanceGraphicsTest1>35.51</TimeSpyPerformanceGraphicsTest1>
+            <TimeSpyPerformanceGraphicsTest2>30.70</TimeSpyPerformanceGraphicsTest2>
+            <TimeSpyPerformanceCpuSection2>5.75</TimeSpyPerformanceCpuSection2>
+            <benchmarkRunId>0a2a1a67-c371-4b0a-9429-d32df8e5729c</benchmarkRunId>
+        </result>
+    </results>
+</benchmark>
