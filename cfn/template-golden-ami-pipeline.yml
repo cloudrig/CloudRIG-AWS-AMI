@@ -391,9 +391,22 @@ Resources:
               DesiredValues:
                 - available
 
+          - name: ShareAMIToTheWorld
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 3
+            onFailure: "step:CancelSpotRequest"
+            inputs:
+              Service: ec2
+              Api: ModifyImageAttribute
+              ImageId: "{{ CreateImage.ImageId }}"
+              LaunchPermission:
+                Add:
+                  Group: all
+
           - name: CopyImageInRegions
             action: aws:executeScript
-            timeoutSeconds: 45
+            timeoutSeconds: 60
             onFailure: "step:CancelSpotRequest"
             inputs:
               Runtime: python3.7
@@ -411,10 +424,23 @@ Resources:
                     #Initialize client
                     ec2 = boto3.client('ec2', region_name=region)
 
-                    ec2.copy_image(
+                    # Copy the AMI
+                    image_id = ec2.copy_image(
                       Name=newImageName,
                       SourceImageId=newImageId,
                       SourceRegion='eu-west-1'
+                    ).get('ImageId')
+
+                    # Share it to the world
+                    ec2.modify_image_attribute(
+                        ImageId=image_id,
+                        LaunchPermission={
+                            'Add': [
+                                {
+                                    'Group': 'all'
+                                }
+                            ]
+                        }
                     )
 
           - name: CancelSpotRequest
