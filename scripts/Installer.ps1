@@ -309,42 +309,10 @@ function disable-recent-start-menu {
     New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -PropertyType DWORD -Name HideRecentlyAddedApps -Value 1
 }
 
-#enable auto login - remove user password
-function autoLogin { Write-Host "This cloud machine needs to be set to automatically login - please use the Setup Auto Login shortcut + Instructions on the desktop to set this up when the script is finished" -ForegroundColor red
-    (New-Object System.Net.WebClient).DownloadFile("https://download.sysinternals.com/files/AutoLogon.zip", "$env:APPDATA\CloudRIGLoader\Autologon.zip")
-    Expand-Archive "$env:APPDATA\CloudRIGLoader\Autologon.zip" -DestinationPath "$env:APPDATA\CloudRIGLoader" -Force
-    $output = "
-    This application was provided by Mark Rusinovish from System Internals",
-    "https://docs.microsoft.com/en-us/sysinternals/downloads/autologon",
-    "",
-    "What this application does:  Enables your server to automatically login, so you can log into Rainway straight away.",
-    "When to use it: The first time you setup your server, or when you change your servers password.",
-    "",
-    "Instructions",
-    "Accept the EULA and enter the following details",
-    "Username: $env:username",
-    "Domain: $env:Computername",
-    "Password: The password you got from Azure/AWS/Google that you use to log into RDP"
-    $output | Out-File "$path\Auto Login\Auto Login Instructions.txt"
-
-    autoLoginShortCut
-}
-
-#Creates Shortcut to Autologon.exe
-function autoLoginShortCut {
-    Write-Output "Create Auto Login Shortcut"
-    $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$path\Auto Login\Setup Auto Logon.lnk")
-    $ShortCut.TargetPath="$env:USERPROFILE\AppData\Roaming\CloudRIGLoader\Autologon.exe"
-    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-    $ShortCut.WindowStyle = 0;
-    $ShortCut.Description = "Setup AutoLogon Shortcut";
-    $ShortCut.Save()
-}
-
 #createshortcut
-function Create-ClearProxy-Shortcut{
-    Write-Output "Create ClearProxy shortcut"
+function Create-ClearProxy-Shortcut {
+    Write-Output "Create ClearProxy shortcut..."
+    if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
     $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Auto Recover GPU.lnk")
     $ShortCut.TargetPath="powershell.exe"
@@ -356,8 +324,9 @@ function Create-ClearProxy-Shortcut{
 }
 
 #createshortcut
-function Create-AutoShutdown-Shortcut{
-    Write-Output "Create Auto Shutdown Shortcut"
+function Create-AutoShutdown-Shortcut {
+    Write-Output "Create Auto Shutdown Shortcut..."
+    if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
     $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup Auto Shutdown.lnk")
     $ShortCut.TargetPath="powershell.exe"
@@ -369,8 +338,9 @@ function Create-AutoShutdown-Shortcut{
 }
 
 #createshortcut
-function Create-One-Hour-Warning-Shortcut{
-    Write-Output "Create One Hour Warning"
+function Create-One-Hour-Warning-Shortcut {
+    Write-Output "Create One Hour Warning..."
+    if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
     $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup One Hour Warning.lnk")
     $ShortCut.TargetPath="powershell.exe"
@@ -434,13 +404,11 @@ Function provider-specific {
         if($devicename -eq "DEV_13F2") {
             #AWS G3.4xLarge M60
             Write-Output "Tesla M60 Detected"
-            autologin
             aws-setup
         }
 
         ElseIF($devicename -eq "DEV_118A") {
             #AWS G2.2xLarge K520
-            autologin
             aws-setup
             Write-Output "GRID K520 Detected"
         }
@@ -460,7 +428,6 @@ Function provider-specific {
             Write-Output "Tesla P100 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
             if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"} Else {}
-            autologin
             aws-setup
         }
 
@@ -469,7 +436,6 @@ Function provider-specific {
             Write-Output "Tesla P4 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
             if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"} Else {}
-            autologin
             aws-setup
         }
 
@@ -478,7 +444,6 @@ Function provider-specific {
             Write-Output "Tesla T4 Detected"
             if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
             if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"} Else {}
-            autologin
             aws-setup
 
             # Disable the second screen
@@ -488,7 +453,6 @@ Function provider-specific {
         Elseif($devicename -eq "DEV_1430") {
             #Quadro M2000
             Write-Output "Quadro M2000 Detected"
-            autologin
             aws-setup
         }
 
