@@ -1,4 +1,4 @@
-$path = [Environment]::GetFolderPath("Desktop")
+﻿$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
@@ -17,6 +17,7 @@ function setupEnvironment {
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\WarningMessage.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\WarningMessage.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\ShowDialog.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\ShowDialog.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\OneHour.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\OneHour.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\PrepareInstanceOnStartup.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\PrepareInstanceOnStartup.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
 }
 
 Function Get-RandomAlphanumericString {
@@ -386,7 +387,7 @@ function Create-AutoShutdown-Shortcut {
     Write-Output "Create Auto Shutdown Shortcut..."
     if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup Auto Shutdown.lnk")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\CloudRIG Tools\Setup Auto Shutdown.lnk")
     $ShortCut.TargetPath="powershell.exe"
     $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1"'
     $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
@@ -400,7 +401,7 @@ function Create-One-Hour-Warning-Shortcut {
     Write-Output "Create One Hour Warning..."
     if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Setup One Hour Warning.lnk")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\CloudRIG Tools\Setup One Hour Warning.lnk")
     $ShortCut.TargetPath="powershell.exe"
     $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateOneHourWarningScheduledTask.ps1"'
     $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
@@ -429,8 +430,8 @@ Function ModidifyManifest {
 
 #AWS Specific tweaks
 function aws-setup {
-    Write-Output "Initializing the ephemeral drives..."
-    & "C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeDisks.ps1"
+    Write-Output "Registering startup script as a Scheduled Task..."
+    schtasks /create /tn "CloudRIG init" /sc onstart /delay 0000:120 /rl highest /ru system /tr "powershell.exe -file ""$ENV:Appdata\CloudRIGLoader\PrepareInstanceOnStartup.ps1"""
 }
 
 #Creates shortcut for the GPU Updater tool
@@ -438,8 +439,9 @@ function gpu-update-shortcut {
     (New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1")
     Unblock-File -Path "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1"
     Write-Output "Creating the GPU Update shortcut..."
+    if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
     $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$path\GPU Updater.lnk")
+    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\CloudRIG Tools\GPU Updater.lnk")
     $ShortCut.TargetPath="powershell.exe"
     $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\GPU Updater Tool.ps1"'
     $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
