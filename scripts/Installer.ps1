@@ -1,4 +1,4 @@
-﻿$path = [Environment]::GetFolderPath("Desktop")
+$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
@@ -19,6 +19,17 @@ function setupEnvironment {
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\OneHour.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\OneHour.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
 }
 
+Function Get-RandomAlphanumericString {
+    [CmdletBinding()]
+    Param (
+        [int] $length = 8
+    )
+    Begin{
+    }
+    Process{
+        Write-Output ( -join ((0x30..0x39) + ( 0x41..0x5A) + ( 0x61..0x7A) | Get-Random -Count $length  | % {[char]$_}) )
+    }
+}
 
 
 #Modifies Local Group Policy to enable Shutdown scrips items
@@ -199,11 +210,12 @@ function install-softwares {
     install-parsec
     Write-host "`  - Success!"
     Write-Host "  * TightVNC" -NoNewline
-    start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
+    $VncPassword = Get-RandomAlphanumericString -length 24
+    start-process msiexec.exe -ArgumentList "/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=$VncPassword SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=$VncPassword" -Wait
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value $env:USERNAME | Out-Null
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
     if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
-    Write-host "`  - Success!"
+    Write-host "`  - Success! [$VncPassword]"
     Write-Host "  * Razer Surround" -NoNewline
     ExtractRazerAudio
     ModidifyManifest
