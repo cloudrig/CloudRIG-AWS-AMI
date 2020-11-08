@@ -342,3 +342,4 @@ Do you want this computer to log on to Windows automatically?
     }
 }
 
+PromptUserAutoLogon
