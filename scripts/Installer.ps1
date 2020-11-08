@@ -514,9 +514,10 @@ Function Server2019Controller {
     if ((gwmi win32_operatingsystem | % caption) -like '*Windows Server 2019*') {
         "Detected Windows Server 2019, downloading Xbox Accessories 1.2 to enable controller support"
         (New-Object System.Net.WebClient).DownloadFile("http://download.microsoft.com/download/6/9/4/69446ACF-E625-4CCF-8F56-58B589934CD3/Xbox360_64Eng.exe", "C:\CloudRIGTemp\Drivers\Xbox360_64Eng.exe")
-        Write-Host "In order to use a controller, Microsoft Xbox Accessories are going to be installed..." -ForegroundColor Red
+        Write-Host "In order to use a controller, Microsoft Xbox Accessories are going to be installed..."
         cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Drivers\Xbox360_64Eng.exe -oC:\CloudRIGTemp\Drivers\Xbox360_64Eng -r -y' | Out-Null
-        cmd.exe /c '"PNPUtil.exe" /add-driver C:\CloudRIGTemp\Drivers\Xbox360_64Eng\xbox360\setup64\files\driver\win7\xusb21.inf'
+        cmd.exe /c '"PNPUtil.exe" /add-driver C:\CloudRIGTemp\Drivers\Xbox360_64Eng\xbox360\setup64\files\driver\win7\xusb21.inf' | Out-Null
+        Write-Host "Done installing Microsoft Xbox Accessories"
     }
 }
 
@@ -552,19 +553,17 @@ function Install-Gaming-Apps {
     Write-Host "  * Origin" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\OriginThinSetup.exe" -ArgumentList '/SILENT'
     Write-host "`  - Success!"
-    # No silent install available :/
-    #Write-Host "Installing Battle.net" -NoNewline
-    #Start-Process "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe" -ArgumentList '/S /Silent /SILENT /q /QUIET'
-    #Write-host "`  - Success!"
     Write-Host "  * Epic Games Launcher" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\EpicGamesLauncherInstaller.msi" -ArgumentList '/qn /norestart'
     Write-host "`  - Success!"
     Write-Host "  * uPlay" -NoNewline
     Start-Process "C:\CloudRIGTemp\Apps\UplayInstaller.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
+    Write-Host "  * Battle.net" -NoNewline
+    Start-Process "C:\CloudRIGTemp\Apps\Battle.net-Setup.exe"
+    Write-Host "`  - MANUAL STEP REQUIRED" -ForegroundColor Red
 
-    Write-host "Sleeping 60s to let the installers finish their work..."
-    Start-Sleep -Seconds 60
+    Read-Host "Press enter when all the installer have finished (don't forget to finish the Battle.net wizard)..."
 
     Server2019Controller
 }
