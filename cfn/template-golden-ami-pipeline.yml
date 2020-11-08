@@ -295,12 +295,14 @@ Resources:
           - name: ApproveInstallationScriptFinished
             action: aws:approve
             onFailure: "step:CancelSpotRequest"
-            timeoutSeconds: 1800
+            isCritical: false
+            timeoutSeconds: 3600
             inputs:
               Message: Please install the CloudRIG tools before approving
               MinRequiredApprovals: 1
               Approvers:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/role-cloudrig-admin"
 
           # Reboot to take into account the changes
           - name: RebootForInstallationScriptFinished
@@ -402,7 +404,7 @@ Resources:
               ImageId: "{{ CreateImage.ImageId }}"
               LaunchPermission:
                 Add:
-                  Group: all
+                  - Group: all
 
           - name: CopyImageInRegions
             action: aws:executeScript
