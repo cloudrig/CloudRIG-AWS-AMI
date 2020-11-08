@@ -12,6 +12,9 @@ Example (version needs to be updated)
 ```
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+cd C:\
+Remove-Item –path C:\CloudRIGTemp –recurse
+Remove-Item –path C:\Users\Administrator\Desktop\CloudRIGTemp\ –recurse
 New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null
 Copy-S3Object -BucketName "cloudrig-amifactory" -Key "v1.0/cloudrig-windows-install.zip" -LocalFile "C:\CloudRIGTemp\cloudrig-windows-install.zip"
 Expand-Archive "C:\CloudRIGTemp\cloudrig-windows-install.zip" -DestinationPath "C:\CloudRIGTemp\cloudrig-windows-install\"

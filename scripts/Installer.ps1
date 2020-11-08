@@ -1,54 +1,59 @@
-$path = [Environment]::GetFolderPath("Desktop")
+﻿$path = [Environment]::GetFolderPath("Desktop")
 $currentusersid = Get-LocalUser "$env:USERNAME" | Select-Object SID | ft -HideTableHeaders | Out-String | ForEach-Object { $_.Trim() }
 
 #Creating Folders and moving script files into System directories
 function setupEnvironment {
-if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup -ItemType directory | Out-Null}
-if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown -ItemType directory | Out-Null}
-if((Test-Path -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader) -eq $true) {} Else {New-Item -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader -ItemType directory | Out-Null}
-if((Test-Path -Path "$path\Auto Login") -eq $true) {} Else {New-Item -path "$path\Auto Login" -ItemType Directory | Out-Null}
-if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
-if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\clear-proxy.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\clear-proxy.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateClearProxyScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateClearProxyScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\Automatic-Shutdown.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\Automatic-Shutdown.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateAutomaticShutdownScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\GPU-Update.ico) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\GPU-Update.ico -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateOneHourWarningScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateOneHourWarningScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\WarningMessage.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\WarningMessage.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\ShowDialog.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\ShowDialog.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
-if((Test-Path $ENV:APPDATA\CloudRIGLoader\OneHour.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\OneHour.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup -ItemType directory | Out-Null}
+    if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown -ItemType directory | Out-Null}
+    if((Test-Path -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader) -eq $true) {} Else {New-Item -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader -ItemType directory | Out-Null}
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\clear-proxy.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\clear-proxy.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateClearProxyScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateClearProxyScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\Automatic-Shutdown.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\Automatic-Shutdown.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateAutomaticShutdownScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\GPU-Update.ico) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\GPU-Update.ico -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateOneHourWarningScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\CreateOneHourWarningScheduledTask.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\WarningMessage.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\WarningMessage.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\ShowDialog.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\ShowDialog.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
+    if((Test-Path $ENV:APPDATA\CloudRIGLoader\OneHour.ps1) -eq $true) {} Else {Move-Item -Path $path\CloudRIGTemp\Resources\OneHour.ps1 -Destination $ENV:APPDATA\CloudRIGLoader}
 }
 
 
 
 #Modifies Local Group Policy to enable Shutdown scrips items
 function add-gpo-modifications {
-$querygpt = Get-content C:\Windows\System32\GroupPolicy\gpt.ini
-$matchgpt = $querygpt -match '{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}'
-if ($matchgpt -contains "*0000F87571E3*" -eq $false) {
-write-output "Adding modifications to GPT.ini"
-$gptstring = get-content C:\Windows\System32\GroupPolicy\gpt.ini
-$gpoversion = $gptstring -match "Version"
-$GPO = $gptstring -match "gPCMachineExtensionNames"
-$add = '[{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}]'
-$replace = "$GPO" + "$add"
-(Get-Content "C:\Windows\System32\GroupPolicy\gpt.ini").Replace("$GPO","$replace") | Set-Content "C:\Windows\System32\GroupPolicy\gpt.ini"
-[int]$i = $gpoversion.trim("Version=") 
-[int]$n = $gpoversion.trim("Version=")
-$n +=2
-(Get-Content C:\Windows\System32\GroupPolicy\gpt.ini) -replace "Version=$i", "Version=$n" | Set-Content C:\Windows\System32\GroupPolicy\gpt.ini}
-else{write-output "Not Required"}
+    $querygpt = Get-content C:\Windows\System32\GroupPolicy\gpt.ini
+    $matchgpt = $querygpt -match '{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}'
+    if ($matchgpt -contains "*0000F87571E3*" -eq $false) {
+        write-output "Adding modifications to GPT.ini"
+        $gptstring = get-content C:\Windows\System32\GroupPolicy\gpt.ini
+        $gpoversion = $gptstring -match "Version"
+        $GPO = $gptstring -match "gPCMachineExtensionNames"
+        $add = '[{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}]'
+        $replace = "$GPO" + "$add"
+        (Get-Content "C:\Windows\System32\GroupPolicy\gpt.ini").Replace("$GPO","$replace") | Set-Content "C:\Windows\System32\GroupPolicy\gpt.ini"
+        [int]$i = $gpoversion.trim("Version=")
+        [int]$n = $gpoversion.trim("Version=")
+        $n +=2
+        (Get-Content C:\Windows\System32\GroupPolicy\gpt.ini) -replace "Version=$i", "Version=$n" | Set-Content C:\Windows\System32\GroupPolicy\gpt.ini}
+    else{
+        write-output "Not Required"
+    }
 }
 
 #Adds Premade Group Policu Item if existing configuration doesn't exist
-function addRegItems{if (Test-Path ("C:\Windows\system32\GroupPolicy" + "\gpt.ini")) 
-{add-gpo-modifications}
-Else
-{Move-Item -Path $path\CloudRIGTemp\Resources\gpt.ini -Destination C:\Windows\system32\GroupPolicy -Force | Out-Null}
-regedit /s $path\CloudRIGTemp\Resources\NetworkRestore.reg
-regedit /s $path\CloudRIGTemp\Resources\ForceCloseShutDown.reg
-New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
+function addRegItems{
+    if (Test-Path ("C:\Windows\system32\GroupPolicy" + "\gpt.ini")) {
+        add-gpo-modifications
+    }
+    Else
+    {
+        Move-Item -Path $path\CloudRIGTemp\Resources\gpt.ini -Destination C:\Windows\system32\GroupPolicy -Force | Out-Null
+    }
+    regedit /s $path\CloudRIGTemp\Resources\NetworkRestore.reg
+    regedit /s $path\CloudRIGTemp\Resources\ForceCloseShutDown.reg
+    New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
 }
 
 function Test-RegistryValue {
@@ -61,19 +66,13 @@ param (
 [parameter(Mandatory=$true)]
  [ValidateNotNullOrEmpty()]$Value
 )
+    try {
+        Get-ItemProperty -Path $Path | Select-Object -ExpandProperty $Value -ErrorAction Stop | Out-Null
+        return $true
 
-try {
-
-Get-ItemProperty -Path $Path | Select-Object -ExpandProperty $Value -ErrorAction Stop | Out-Null
- return $true
- }
-
-catch {
-
-return $false
-
-}
-
+    } Catch {
+        return $false
+    }
 }
 
 function remove-existing-shortcuts-desktop {
@@ -84,7 +83,7 @@ function remove-existing-shortcuts-desktop {
 
 #Create CloudRIGTemp folder in C Drive
 function create-directories {
-    Write-Output "Creating Directories in C:\ Drive"
+    Write-Output "Creating Directories in C:\ Drive..."
     if((Test-Path -Path C:\CloudRIGTemp) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp -ItemType directory | Out-Null}
     if((Test-Path -Path C:\CloudRIGTemp\Apps) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\Apps -ItemType directory | Out-Null}
     if((Test-Path -Path C:\CloudRIGTemp\DirectX) -eq $true) {} Else {New-Item -Path C:\CloudRIGTemp\DirectX -ItemType directory | Out-Null}
@@ -94,10 +93,36 @@ function create-directories {
 
 #disable IE security
 function disable-iesecurity {
-    Write-Output "Enabling Web Browsing on IE (Disabling IE Security)"
+    Write-Output "Enabling Web Browsing on IE (Disabling IE Security)..."
     Set-Itemproperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}" -name IsInstalled -value 0 -force | Out-Null
     Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A8-37EF-4b3f-8CFC-4F3A74704073}" -Name IsInstalled -Value 0 -Force | Out-Null
     Stop-Process -Name Explorer -Force
+}
+
+function install-parsec {
+    # Extract the binaries from the exe
+    cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\parsec-windows.exe -oC:\CloudRIGTemp\Apps\Parsec-Windows -y' | Out-Null
+    if((Test-Path -Path 'C:\Program Files\Parsec')-eq $true) {} Else {New-Item -Path 'C:\Program Files\Parsec' -ItemType Directory | Out-Null}
+    if((Test-Path -Path "C:\Program Files\Parsec\skel") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\skel -Destination 'C:\Program Files\Parsec' | Out-Null}
+    if((Test-Path -Path "C:\Program Files\Parsec\vigem") -eq $true) {} Else  {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\vigem -Destination 'C:\Program Files\Parsec' | Out-Null}
+    if((Test-Path -Path "C:\Program Files\Parsec\wscripts") -eq $true) {} Else  {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\wscripts -Destination 'C:\Program Files\Parsec' | Out-Null}
+    if((Test-Path -Path "C:\Program Files\Parsec\parsecd.exe") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\parsecd.exe -Destination 'C:\Program Files\Parsec' | Out-Null}
+    if((Test-Path -Path "C:\Program Files\Parsec\pservice.exe") -eq $true) {} Else {Move-Item -Path C:\CloudRIGTemp\Apps\Parsec-Windows\pservice.exe -Destination 'C:\Program Files\Parsec' | Out-Null}
+    Start-Sleep 5
+    # Install the controller driver
+    cmd.exe /c '"C:\Program Files\Parsec\vigem\10\x64\devcon.exe" install "C:\Program Files\Parsec\vigem\10\ViGEmBus.inf" Nefarius\ViGEmBus\Gen1' | Out-Null
+    # Fireall rule
+    New-NetFirewallRule -DisplayName "Parsec" -Direction Inbound -Program "C:\Program Files\Parsec\Parsecd.exe" -Profile Private,Public -Action Allow -Enabled True | Out-Null
+    # Create service
+    cmd.exe /c 'sc.exe Create "Parsec" binPath= "\"C:\Program Files\Parsec\pservice.exe\"" start= "auto"' | Out-Null
+    sc.exe Start 'Parsec' | Out-Null
+    # Create shortcut
+    $Shell = New-Object -ComObject ("WScript.Shell")
+    $ShortCut = $Shell.CreateShortcut("$path\Parsec.lnk")
+    $ShortCut.TargetPath="C:\Program Files\Parsec\parsecd.exe"
+    $ShortCut.WorkingDirectory = "C:\Program Files\Parsec\";
+    $ShortCut.Description = "Parsec";
+    $ShortCut.Save()
 }
 
 # Install all the non-gaming tools (vc redist...)
@@ -115,6 +140,9 @@ function install-softwares {
     Write-Host "  * Rainway" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe")
     Write-host "`  - Success!"
+    Write-Host "  * Parsec" -NoNewline
+    (New-Object System.Net.WebClient).DownloadFile("https://builds.parsecgaming.com/package/parsec-windows.exe", "C:\CloudRIGTemp\Apps\parsec-windows.exe")
+    Write-host "` - Success!"
     Write-Host "  * 7Zip" -NoNewline
     $url = Invoke-WebRequest -Uri https://www.7-zip.org/download.html
     (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/$($($($url.Links | Where-Object outertext -Like "Download")[1]).OuterHTML.split('"')[1])" ,"C:\CloudRIGTemp\Apps\7zip.exe") | Out-Null
@@ -161,11 +189,14 @@ function install-softwares {
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2017_x64.exe" -ArgumentList '/install /passive /norestart' -wait
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\vc_redist_2019_x86.exe" -ArgumentList '/install /passive /norestart' -wait
     Write-host "`  - Success!"
+    Write-Host "  * 7zip" -NoNewline
+    Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
+    Write-host "`  - Success!"
     Write-Host "  * Rainway" -NoNewline
     Start-Process -FilePath "C:\CloudRIGTemp\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
     Write-host "`  - Success!"
-    Write-Host "  * 7zip" -NoNewline
-    Start-Process C:\CloudRIGTemp\Apps\7zip.exe -ArgumentList '/S /D="C:\Program Files\7-Zip"' -Wait
+    Write-Host "  * Parsec" -NoNewline
+    install-parsec
     Write-host "`  - Success!"
     Write-Host "  * TightVNC" -NoNewline
     start-process msiexec.exe -ArgumentList '/i C:\CloudRIGTemp\Apps\TightVNC.msi /quiet /norestart ADDLOCAL=Server SET_USECONTROLAUTHENTICATION=1 VALUE_OF_USECONTROLAUTHENTICATION=1 SET_CONTROLPASSWORD=1 VALUE_OF_CONTROLPASSWORD=4ubg9sde SET_USEVNCAUTHENTICATION=1 VALUE_OF_USEVNCAUTHENTICATION=1 SET_PASSWORD=1 VALUE_OF_PASSWORD=4ubg9sde' -Wait
@@ -192,7 +223,7 @@ function install-softwares {
 
 function set-default-browser {
     Start-Process "C:\CloudRIGTemp\Apps\SetDefaultBrowser.exe" -ArgumentList 'HKLM "Google Chrome"' -Wait
-    $Target = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    $Target = "C:\Program Files\Google\Chrome\Application\chrome.exe"
     $KeyPath1  = "HKLM:\SOFTWARE\Classes"
     $KeyPath2  = "*"
     $KeyPath3  = "shell"
@@ -232,6 +263,26 @@ function set-time {
     Write-Output "Setting Time to Automatic..."
     Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
     Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
+}
+
+# Add more languages in the AMI
+function add-languages {
+    $LanguageList = Get-WinUserLanguageList
+    $LanguageList[0].Handwriting = $True
+    $LanguageList[0].Spellchecking = $True
+    $LanguageList.Add("fr-FR")
+    $LanguageList[1].Handwriting = $True
+    $LanguageList[1].Spellchecking = $True
+    $LanguageList.Add("de-DE")
+    $LanguageList[2].Handwriting = $True
+    $LanguageList[2].Spellchecking = $True
+    $LanguageList.Add("es-ES")
+    $LanguageList[3].Handwriting = $True
+    $LanguageList[3].Spellchecking = $True
+    $LanguageList.Add("it-IT")
+    $LanguageList[4].Handwriting = $True
+    $LanguageList[4].Spellchecking = $True
+    Set-WinUserLanguageList -Force $LanguageList
 }
 
 #disable new network window
@@ -275,32 +326,32 @@ function force-close-apps {
 
 #show hidden items
 function show-hidden-items {
-    Write-Output "Showing Hidden Files in Explorer"
+    Write-Output "Showing Hidden Files in Explorer..."
     set-itemproperty -path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name Hidden -Value 1 | Out-Null
 }
 
 #show file extensions
 function show-file-extensions {
-    Write-Output "Showing File Extensions"
+    Write-Output "Showing File Extensions..."
     Set-itemproperty -path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name HideFileExt -Value 0 | Out-Null
 }
 
 #disable logout start menu
 function disable-logout {
-    Write-Output "Disabling Logout"
+    Write-Output "Disabling Logout..."
     if((Test-RegistryValue -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Value StartMenuLogOff )-eq $true) {Set-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null} Else {New-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name StartMenuLogOff -Value 1 | Out-Null}
 }
 
 #disable lock start menu
 function disable-lock {
-    Write-Output "Disable Lock"
+    Write-Output "Disable Lock..."
     if((Test-Path -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies -Name Software | Out-Null}
     if((Test-RegistryValue -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Value DisableLockWorkstation) -eq $true) {Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null } Else {New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name DisableLockWorkstation -Value 1 | Out-Null}
 }
 
 #set wallpaper
 function set-wallpaper {
-    Write-Output "Setting WallPaper"
+    Write-Output "Setting WallPaper.."
     #if((Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System) -eq $true) {} Else {New-Item -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies" -Name "System" | Out-Null}
     #if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value Wallpaper) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name Wallpaper -PropertyType String -value "C:\CloudRIGTemp\parsec+desktop.png" | Out-Null}
     #if((Test-RegistryValue -path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -value WallpaperStyle) -eq $true) {Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -value 2 | Out-Null} Else {New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name WallpaperStyle -PropertyType String -value 2 | Out-Null}
@@ -313,18 +364,9 @@ function disable-recent-start-menu {
     New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -PropertyType DWORD -Name HideRecentlyAddedApps -Value 1
 }
 
-#createshortcut
-function Create-ClearProxy-Shortcut {
-    Write-Output "Create ClearProxy shortcut..."
-    if((Test-Path -Path "$env:USERPROFILE\Desktop\CloudRIG Tools") -eq $true) {} Else {New-Item -Path "$env:USERPROFILE\Desktop\CloudRIG Tools" -ItemType Directory | Out-Null}
-    $Shell = New-Object -ComObject ("WScript.Shell")
-    $ShortCut = $Shell.CreateShortcut("$env:USERPROFILE\Desktop\Auto Recover GPU.lnk")
-    $ShortCut.TargetPath="powershell.exe"
-    $ShortCut.Arguments='-ExecutionPolicy Bypass -File "%homepath%\AppData\Roaming\CloudRIGLoader\CreateClearProxyScheduledTask.ps1"'
-    $ShortCut.WorkingDirectory = "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader";
-    $ShortCut.WindowStyle = 0;
-    $ShortCut.Description = "ClearProxy shortcut";
-    $ShortCut.Save()
+function enable-microphone {
+    Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone -Name "Value" -Value "Allow"
+    Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone -Name "Value" -Value "Allow"
 }
 
 #createshortcut
@@ -357,8 +399,8 @@ function Create-One-Hour-Warning-Shortcut {
 
 #Disables Server Manager opening on Startup
 function disable-server-manager {
-Write-Output "Disable Auto Opening Server Manager"
-Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null
+    Write-Output "Disable Auto Opening Server Manager"
+    Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null
 }
 
 Function ExtractRazerAudio {
@@ -383,7 +425,7 @@ function aws-setup {
 function gpu-update-shortcut {
     (New-Object System.Net.WebClient).DownloadFile("https://raw.githubusercontent.com/cloudrig/Cloud-GPU-Updater/master/GPU%20Updater%20Tool.ps1", "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1")
     Unblock-File -Path "$ENV:Appdata\CloudRIGLoader\GPU Updater Tool.ps1"
-    Write-Output "GPU-Update-Shortcut"
+    Write-Output "Creating the GPU Update shortcut..."
     $Shell = New-Object -ComObject ("WScript.Shell")
     $ShortCut = $Shell.CreateShortcut("$path\GPU Updater.lnk")
     $ShortCut.TargetPath="powershell.exe"
@@ -397,7 +439,7 @@ function gpu-update-shortcut {
 
 #Provider specific driver install and setup
 Function provider-specific {
-    Write-Output "Doing provider specific customizations"
+    Write-Output "Doing provider specific customizations for this provider..."
     #Device ID Query
     $gputype = get-wmiobject -query "select DeviceID from Win32_PNPEntity Where (deviceid Like '%PCI\\VEN_10DE%') and (PNPClass = 'Display' or Name = '3D Video Controller')" | Select-Object DeviceID -ExpandProperty DeviceID
     if ($gputype -eq $null) {
@@ -413,8 +455,8 @@ Function provider-specific {
 
         ElseIF($devicename -eq "DEV_118A") {
             #AWS G2.2xLarge K520
-            aws-setup
             Write-Output "GRID K520 Detected"
+            aws-setup
         }
 
         ElseIF($devicename -eq "DEV_1BB1") {
@@ -446,12 +488,13 @@ Function provider-specific {
         Elseif($devicename -eq "DEV_1EB8") {
             #Tesla T4
             Write-Output "Tesla T4 Detected"
-            if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"} Else {}
-            if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"} Else {}
+            if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {
+                remove-item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"
+            }
+            if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {
+                Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"
+            }
             aws-setup
-
-            # Disable the second screen
-            cmd.exe /c "displayswitch.exe /internal"
         }
 
         Elseif($devicename -eq "DEV_1430") {
@@ -607,7 +650,9 @@ show-hidden-items
 show-file-extensions
 enhance-pointer-precision
 enable-mousekeys
+enable-microphone
 set-time
+add-languages
 disable-server-manager
 Stop-Process -ProcessName explorer
 
@@ -624,7 +669,6 @@ provider-specific
 # TEMP - Do not disable for now as we need this for troubleshooting
 # disable-automatic-updates
 
-Create-ClearProxy-Shortcut
 Create-AutoShutdown-Shortcut
 Create-One-Hour-Warning-Shortcut
 
