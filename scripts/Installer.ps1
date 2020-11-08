@@ -182,6 +182,9 @@ function install-softwares {
     Write-Host "  * Razer Surround" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("http://rzr.to/surround-pc-download", "C:\CloudRIGTemp\Apps\razer-surround-driver.exe")
     Write-host "`  - Success!"
+    Write-Host "  * VB Audio - Cable" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/vb-audio/VBCABLE_Driver_Pack43.zip" -LocalFile "C:\CloudRIGTemp\Apps\VBCABLE_Driver.zip" | Out-Null
+    Write-host "`  - Success!"
 
     Write-Output "Installing tools..."
     Write-Host "  * Chrome" -NoNewline
@@ -217,6 +220,10 @@ function install-softwares {
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name DefaultUserName -Value "" | Out-Null
     if((Test-RegistryValue -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value AutoAdminLogin)-eq $true){Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null} Else {New-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name AutoAdminLogin -Value 1 | Out-Null}
     Write-host "`  - Success! [$VncPassword]"
+    Write-Host "  * VB Audio - Cable" -NoNewline
+    cmd.exe /c '"C:\Program Files\7-Zip\7z.exe" x C:\CloudRIGTemp\Apps\VBCABLE_Driver.zip -oC:\CloudRIGTemp\Apps\VBCABLE_Driver\ -y' | Out-Null
+    Start-Process -FilePath "C:\CloudRIGTemp\Apps\VBCABLE_Driver\VBCABLE_Setup_x64.exe" -wait
+    Write-host "`  - Success!"
     Write-Host "  * Razer Surround" -NoNewline
     ExtractRazerAudio
     ModidifyManifest
@@ -428,7 +435,7 @@ Function ModidifyManifest {
     (Get-Content $InstallerManifest) -replace $regex, 'true' | Set-Content $InstallerManifest -Encoding UTF8
 }
 
-#AWS Specific tweaks
+# AWS Specific tweaks
 function aws-setup {
     Write-Output "Registering startup script as a Scheduled Task..."
     schtasks /create /tn "CloudRIG init" /sc onstart /delay 0000:120 /rl highest /ru system /tr "powershell.exe -file ""$ENV:Appdata\CloudRIGLoader\PrepareInstanceOnStartup.ps1"""
