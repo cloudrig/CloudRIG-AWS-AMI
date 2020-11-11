@@ -38,69 +38,69 @@ Function Wait-ForJobs {
 Function Install-Parsec
 {
     Write-Host "  * Parsec" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://builds.parsecgaming.com/package/parsec-windows.exe", "$CloudRIGInstallBaseDir\Apps\parsec-windows.exe")
+    (New-Object System.Net.WebClient).DownloadFile("https://builds.parsecgaming.com/package/parsec-windows.exe", "$global:CloudRIGInstallBaseDir\Apps\parsec-windows.exe")
     Start-Process -FilePath "c:\gcloudrig\downloads\parsec-windows.exe" -ArgumentList '/S' -wait
     Write-host "` - Success!"
 }
 
 Function Install-Rainway {
     Write-Host "  * Rainway" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "$CloudRIGInstallBaseDir\Apps\rainway-bootstrapper.exe")
-    Start-Process -FilePath "$CloudRIGInstallBaseDir\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
+    (New-Object System.Net.WebClient).DownloadFile("https://releases.rainway.com/bootstrapper.exe", "$global:CloudRIGInstallBaseDir\Apps\rainway-bootstrapper.exe")
+    Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\rainway-bootstrapper.exe" -ArgumentList '/S' -wait
     Write-host "`  - Success!"
 }
 
 Function Install-NICEDCV {
     Write-Host "  * NICE DCV" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://d1uj6qtbmh3dt5.cloudfront.net/2020.1/Servers/nice-dcv-server-x64-Release-2020.1-9012.msi", "$CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.exe")
-    Start-Process -FilePath "$CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.exe" -ArgumentList '/quiet','/norestart','/l*v', 'dcv_install_msi.log' -wait
+    (New-Object System.Net.WebClient).DownloadFile("https://d1uj6qtbmh3dt5.cloudfront.net/2020.1/Servers/nice-dcv-server-x64-Release-2020.1-9012.msi", "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.exe")
+    Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.exe" -ArgumentList '/quiet','/norestart','/l*v', 'dcv_install_msi.log' -wait
     Write-host "`  - Success!"
 }
 
 Function Install-Steam
 {
     Write-Host "  * Steam" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe", "$CloudRIGInstallBaseDir\Apps\SteamSetup.exe")
-    Start-Process "$CloudRIGInstallBaseDir\Apps\SteamSetup.exe" -ArgumentList '/S'
+    (New-Object System.Net.WebClient).DownloadFile("https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe", "$global:CloudRIGInstallBaseDir\Apps\SteamSetup.exe")
+    Start-Process "$global:CloudRIGInstallBaseDir\Apps\SteamSetup.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
 }
 
 Function Install-Discord
 {
     Write-Host "  * Discord" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://discordapp.com/api/download?platform=win", "$CloudRIGInstallBaseDir\Apps\DiscordSetup.exe")
-    Start-Process "$CloudRIGInstallBaseDir\Apps\DiscordSetup.exe"
+    (New-Object System.Net.WebClient).DownloadFile("https://discordapp.com/api/download?platform=win", "$global:CloudRIGInstallBaseDir\Apps\DiscordSetup.exe")
+    Start-Process "$global:CloudRIGInstallBaseDir\Apps\DiscordSetup.exe"
     Write-host "`  - Success!"
 }
 
 Function Install-Origin
 {
     Write-Host "  * Origin" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://origin-a.akamaihd.net/Origin-Client-Download/origin/live/OriginThinSetup.exe", "$CloudRIGInstallBaseDir\Apps\OriginThinSetup.exe")
-    Start-Process "$CloudRIGInstallBaseDir\Apps\OriginThinSetup.exe" -ArgumentList '/SILENT'
+    (New-Object System.Net.WebClient).DownloadFile("https://origin-a.akamaihd.net/Origin-Client-Download/origin/live/OriginThinSetup.exe", "$global:CloudRIGInstallBaseDir\Apps\OriginThinSetup.exe")
+    Start-Process "$global:CloudRIGInstallBaseDir\Apps\OriginThinSetup.exe" -ArgumentList '/SILENT'
     Write-host "`  - Success!"
 }
 
 Function Install-EpicGames
 {
     Write-Host "  * Epic Games launcher" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi", "$CloudRIGInstallBaseDir\Apps\EpicGamesLauncherInstaller.msi")
-    Start-Process "$CloudRIGInstallBaseDir\Apps\EpicGamesLauncherInstaller.msi" -ArgumentList '/qn /norestart'
+    (New-Object System.Net.WebClient).DownloadFile("https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi", "$global:CloudRIGInstallBaseDir\Apps\EpicGamesLauncherInstaller.msi")
+    Start-Process "$global:CloudRIGInstallBaseDir\Apps\EpicGamesLauncherInstaller.msi" -ArgumentList '/qn /norestart'
     Write-host "`  - Success!"
 }
 
 Function Install-UPlay
 {
     Write-Host "  * uPlay" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://ubistatic3-a.akamaihd.net/orbit/launcher_installer/UplayInstaller.exe", "$CloudRIGInstallBaseDir\Apps\UplayInstaller.exe")
-    Start-Process "$CloudRIGInstallBaseDir\Apps\UplayInstaller.exe" -ArgumentList '/S'
+    (New-Object System.Net.WebClient).DownloadFile("https://ubistatic3-a.akamaihd.net/orbit/launcher_installer/UplayInstaller.exe", "$global:CloudRIGInstallBaseDir\Apps\UplayInstaller.exe")
+    Start-Process "$global:CloudRIGInstallBaseDir\Apps\UplayInstaller.exe" -ArgumentList '/S'
     Write-host "`  - Success!"
 }
 
 Function Install-Battlenet {
     Write-Output "Installing gaming apps..."
     Write-Host "  * Battle.net" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&version=LIVE&gameProgram=BATTLENET_APP", "$CloudRIGInstallBaseDir\Apps\Battle.net-Setup.exe")
-    Start-Process -FileName "$CloudRIGInstallBaseDir\Apps\Battle.net-Setup.exe" -ArgumentList '--lang=english','--bnetdir="c:\Program Files (x86)\Battle.net"'
+    (New-Object System.Net.WebClient).DownloadFile("https://www.battle.net/download/getInstallerForGame?os=win&locale=enUS&version=LIVE&gameProgram=BATTLENET_APP", "$global:CloudRIGInstallBaseDir\Apps\Battle.net-Setup.exe")
+    Start-Process -FileName "$global:CloudRIGInstallBaseDir\Apps\Battle.net-Setup.exe" -ArgumentList '--lang=english','--bnetdir="c:\Program Files (x86)\Battle.net"'
     Write-host "`  - Success!"
 }

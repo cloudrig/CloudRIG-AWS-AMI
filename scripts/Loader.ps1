@@ -30,9 +30,12 @@
     
 "                                         
 Write-Output "Setting up Environment"
-$CloudRIGInstallBaseDir = "C:\CloudRIGInstall"
+Set-Variable -Name a -Value 'CloudRIGInstallBaseDir' -Scope Global
 
-if((Test-Path -Path "$CloudRIGInstallBaseDir" )-eq $true){} Else {New-Item -Path "$CloudRIGInstallBaseDir" -ItemType directory | Out-Null}
+Write-Output "Creating $global:CloudRIGInstallBaseDir..."
+
+if((Test-Path -Path "$global:CloudRIGInstallBaseDir" )-eq $true){} Else {New-Item -Path "$global:CloudRIGInstallBaseDir" -ItemType directory | Out-Null}
+
 
 Write-Output "Starting the installation script..."
 Import-Module -Name "$PSScriptRoot/Installer.psm1"

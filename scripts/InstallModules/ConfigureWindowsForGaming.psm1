@@ -151,7 +151,7 @@ Function Register-Scripts
 {
     if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup -ItemType directory | Out-Null}
     if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown -ItemType directory | Out-Null}
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
 
 
     # Update GPO if needed
@@ -176,15 +176,15 @@ Function Register-Scripts
     }
     Else
     {
-        Move-Item -Path $CloudRIGInstallBaseDir\Resources\gpt.ini -Destination C:\Windows\system32\GroupPolicy -Force | Out-Null
+        Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\gpt.ini -Destination C:\Windows\system32\GroupPolicy -Force | Out-Null
     }
 
     # Register a shutdown script that
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $CloudRIGInstallBaseDir\Resources\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
-    regedit /s $CloudRIGInstallBaseDir\Resources\NetworkRestore.reg
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
+    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
+    regedit /s $global:CloudRIGInstallBaseDir\Resources\NetworkRestore.reg
 
-    regedit /s $CloudRIGInstallBaseDir\Resources\ForceCloseShutDown.reg
+    regedit /s $global:CloudRIGInstallBaseDir\Resources\ForceCloseShutDown.reg
 
     New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
 }

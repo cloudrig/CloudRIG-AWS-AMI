@@ -11,7 +11,6 @@ Function Install-EntryPoint
     Param (
         [String] $CloudRIGBaseFolder
     )
-    $CloudRIGInstallBaseDir = $CloudRIGBaseFolder
 
     Install-Env
 
@@ -30,7 +29,7 @@ Function Install-Env {
 
 Function Remove-Env {
     Write-Output "Cleaning up..."
-    Remove-Item -Path "$CloudRIGInstallBaseDir" -force -Recurse -ErrorAction SilentlyContinue
+    Remove-Item -Path "$global:CloudRIGInstallBaseDir" -force -Recurse -ErrorAction SilentlyContinue
     Write-Output "Removing recent files..."
     Remove-Item "$env:APPDATA\Microsoft\Windows\Recent\*" -Recurse -Force | Out-Null
 }
