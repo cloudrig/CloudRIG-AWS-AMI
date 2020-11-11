@@ -19,6 +19,7 @@
                     
                     CLOUD SKU:
                     AWS G3.4xLarge    (Tesla M60)
+                    AWS G4dn.xLarge   (Quadro M2000)
                     AWS G2.2xLarge    (GRID K520)
                     Azure NV6         (Tesla M60)
                     Paperspace P4000  (Quadro P4000)
@@ -29,15 +30,10 @@
     
 "                                         
 Write-Output "Setting up Environment"
-$path = [Environment]::GetFolderPath("Desktop")
-if((Test-Path -Path $path\CloudRIGTemp )-eq $true){} Else {New-Item -Path $path\CloudRIGTemp -ItemType directory | Out-Null}
-Unblock-File -Path .\*
-copy-Item .\* -Destination $path\CloudRIGTemp\ -Recurse | Out-Null
-#lil nap
-Start-Sleep -s 1
-#Unblocking all script files
-Write-Output "Unblocking files just in case"
-Get-ChildItem -Path $path\CloudRIGTemp -Recurse | Unblock-File
+$CloudRIGInstallBaseDir = "C:\CloudRIGInstall"
+
+if((Test-Path -Path "$CloudRIGInstallBaseDir" )-eq $true){} Else {New-Item -Path "$CloudRIGInstallBaseDir" -ItemType directory | Out-Null}
 
 Write-Output "Starting the installation script..."
-& "$path\CloudRIGTemp\Installer.ps1"
+Import-Module -Name "$PSScriptRoot/Installer.psm1"
+Install-EntryPoint
