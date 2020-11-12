@@ -434,7 +434,7 @@ Resources:
             timeoutSeconds: 60
             onFailure: "step:CancelSpotRequest"
             inputs:
-              Runtime: python3.7
+              Runtime: python3.8
               Handler: copyImageInAllRegions
               InputPayload:
                 ImageId: "{{ CreateImage.ImageId }}"
@@ -445,18 +445,29 @@ Resources:
                 def copyImageInAllRegions(events,context):
                   newImageId = events['ImageId']
                   newImageName = events['ImageName']
+
+                  images_per_region = {}
+
                   for region in events['Regions']:
                     #Initialize client
                     ec2 = boto3.client('ec2', region_name=region)
 
                     # Copy the AMI
-                    image_id = ec2.copy_image(
+                    print(f'Copying in region {region}...')
+                    images_per_region[region] = ec2.copy_image(
                       Name=newImageName,
                       SourceImageId=newImageId,
                       SourceRegion='eu-west-1'
                     ).get('ImageId')
 
+                  for region in events['Regions']:
+                    # Wait for image to be ready
+                    ec2 = boto3.client('ec2', region_name=region)
+                    print(f'Waiting for image {images_per_region.get(region)} in region {region}...')
+                    ec2.get_waiter('image_available').wait(ImageIds=[images_per_region.get(region)])
+
                     # Share it to the world
+                    print(f'Sharing to the world the image {images_per_region.get(region)} in region {region}...')
                     ec2.modify_image_attribute(
                         ImageId=image_id,
                         LaunchPermission={
