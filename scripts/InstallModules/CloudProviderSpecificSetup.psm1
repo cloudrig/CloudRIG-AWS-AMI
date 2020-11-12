@@ -60,14 +60,13 @@ Function Install-CloudProviderSpecificSetup
 
         Elseif($devicename -eq "DEV_1EB8")
         {
-            #Tesla T4
+            #Tesla T4 - AWS g4dn.xLarge
             Write-Output "Tesla T4 Detected"
-            Install-GCESetup
+            Install-AWSSetup
         }
 
         Elseif($devicename -eq "DEV_1430")
         {
-            # g4dn instances - Quadro M2000
             Write-Output "Quadro M2000 Detected"
             Install-AWSSetup
         }
@@ -81,16 +80,29 @@ Function Install-CloudProviderSpecificSetup
 
 Function Install-AWSSetup {
     Write-Host "Running on AWS"
+
+    Write-Host "` * Configure EC2Launch to init drives and change wallpaper" -NoNewLine
+    $config = & "C:\Program Files\Amazon\EC2Launch\EC2Launch.exe" get-agent-config --format json | ConvertFrom-Json
+    $initVolumes = @{}
+    $initVolumes["task"] = "initializeVolume"
+    $initVolumes["inputs"] = @{}
+    $initVolumes["inputs"]["initialize"] = "all"
+    $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $initVolumes}}
+    $config | ConvertTo-Json -Depth 6 | Out-File -encoding UTF8 $env:ProgramData/Amazon/EC2Launch/config/agent-config.yml
+    Write-Host "` - Success"
 }
 
 Function Install-GCESetup {
     Write-Host "Running on Google Compute Engine"
+
+    Write-Host "` * Remove BGInfo" -NoNewLine
     if((Test-Path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe") -eq $true) {
         Remove-Item -path "C:\Program Files\Google\Compute Engine\tools\BGInfo.exe"
     }
     if((Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk") -eq $true) {
         Remove-Item -path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\BGinfo.lnk"
     }
+    Write-Host "` - Success"
 }
 
 Function Install-PaperspaceSetup {

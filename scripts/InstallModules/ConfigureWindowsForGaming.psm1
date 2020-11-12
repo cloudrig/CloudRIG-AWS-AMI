@@ -4,23 +4,33 @@ Import-Module "$PSScriptRoot\Common"
 
 Function Install-ConfigurationWindowsForGaming
 {
+    Write-Host "Configuring Windows for Gaming..."
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Remove shortcuts" -PercentComplete 0
     Remove-DefaultShortcuts
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Enable audio" -PercentComplete 20
     Enable-Audio
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Optimise Windows for gaming" -PercentComplete 40
     Optimize-ForGamingPerformance
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Optimise desktop experience" -PercentComplete 60
     Optimize-DesktopExperience
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Register scripts" -PercentComplete 80
     Register-Scripts
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Enable force close apps" -PercentComplete 95
     Enable-ForceCloseApps
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Done" -PercentComplete 100
 }
 
 Function Remove-DefaultShortcuts
 {
-    Write-Host "Removing existing shotcuts on the Desktop..."
+    Write-Host "`  * Remove default shortcuts" -NoNewline
     Get-ChildItem -Path "$env:USERPROFILE\Desktop\" *.lnk | foreach { Remove-Item -Path $_.FullName }
     Get-ChildItem -Path "$env:USERPROFILE\Desktop\" *.website | foreach { Remove-Item -Path $_.FullName }
+    Write-Host "`  - Success!"
 }
 
 Function Enable-Audio
 {
+    Write-Host "`  * Enable audio service and microphone access" -NoNewLine
     # Start audio service
     Set-Service Audiosrv -startuptype "automatic"
     Start-Service Audiosrv
@@ -28,12 +38,13 @@ Function Enable-Audio
     # Enable microphone
     Set-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone -Name "Value" -Value "Allow"
     Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone -Name "Value" -Value "Allow"
+    Write-Host "`  - Success!"
 }
 
 # Copied from https://github.com/putty182/gcloudrig/
 Function Optimize-ForGamingPerformance
 {
-    Write-Status "Disabling things that slow down the system unexpectedly..."
+    Write-Host "`  * Tuning Windows settings to optimise gaming experience" -NoNewLine
 
     # turn off ie security
     $AdminKey = "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{A509B1A7-37EF-4b3f-8CFC-4F3A74704073}"
@@ -49,6 +60,10 @@ Function Optimize-ForGamingPerformance
 
     # disable explorer features
     $UserKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer"
+    If((Test-RegistryItemExists -path $UserKey) -eq $false)
+    {
+        New-Item -Path $UserKey | Out-Null
+    }
     Set-ItemProperty $UserKey "NoLowDiskSpaceChecks" 1
     Set-ItemProperty $UserKey "LinkResolveIgnoreLinkInfo" 1
     Set-ItemProperty $UserKey "NoResolveSearch" 1
@@ -56,6 +71,10 @@ Function Optimize-ForGamingPerformance
     Set-ItemProperty $UserKey "NoInternetOpenWith" 1
 
     # Turn off Shutdown Event Tracker
+    If((Test-RegistryItemExists -path "HKLM:\Software\Policies\Microsoft\Windows NT\reliability") -eq $false)
+    {
+        New-Item -Path "HKLM:\Software\Policies\Microsoft\Windows NT\reliability" | Out-Null
+    }
     Set-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows NT\reliability" ShutdownReasonOn 0
 
     # Turn off Windows Error Reporting
@@ -65,13 +84,13 @@ Function Optimize-ForGamingPerformance
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl" -Name "CrashDumpEnabled" -Value 0
 
     # disable some more scheduled tasks
-    Disable-ScheduledTask -TaskName 'ServerManager' -TaskPath '\Microsoft\Windows\Server Manager'
-    Disable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\Microsoft\Windows\Defrag'
-    Disable-ScheduledTask -TaskName 'ProactiveScan' -TaskPath '\Microsoft\Windows\Chkdsk'
-    Disable-ScheduledTask -TaskName 'Scheduled' -TaskPath '\Microsoft\Windows\Diagnosis'
-    Disable-ScheduledTask -TaskName 'SilentCleanup' -TaskPath '\Microsoft\Windows\DiskCleanup'
-    Disable-ScheduledTask -TaskName 'WinSAT' -TaskPath '\Microsoft\Windows\Maintenance'
-    Disable-ScheduledTask -TaskName 'StartComponentCleanup' -TaskPath '\Microsoft\Windows\Servicing'
+    Disable-ScheduledTask -TaskName 'ServerManager' -TaskPath '\Microsoft\Windows\Server Manager' | Out-Null
+    Disable-ScheduledTask -TaskName 'ScheduledDefrag' -TaskPath '\Microsoft\Windows\Defrag' | Out-Null
+    Disable-ScheduledTask -TaskName 'ProactiveScan' -TaskPath '\Microsoft\Windows\Chkdsk' | Out-Null
+    Disable-ScheduledTask -TaskName 'Scheduled' -TaskPath '\Microsoft\Windows\Diagnosis' | Out-Null
+    Disable-ScheduledTask -TaskName 'SilentCleanup' -TaskPath '\Microsoft\Windows\DiskCleanup' | Out-Null
+    Disable-ScheduledTask -TaskName 'WinSAT' -TaskPath '\Microsoft\Windows\Maintenance' | Out-Null
+    Disable-ScheduledTask -TaskName 'StartComponentCleanup' -TaskPath '\Microsoft\Windows\Servicing' | Out-Null
 
     # disable unnecessary services
     $services = @(
@@ -90,16 +109,16 @@ Function Optimize-ForGamingPerformance
     "RemoteAccess"                             # Routing and Remote Access
     )
     foreach ($service in $services) {
-        Set-Service $service -startuptype "disabled"
-        Stop-Service $service -force
+        Set-Service $service -startuptype "disabled" | Out-Null
+        Stop-Service $service -force | Out-Null
     }
-    Write-Status "  done."
+    Write-Host "`  - Success!"
 }
 
 # Copied from https://github.com/putty182/gcloudrig/
 Function Optimize-DesktopExperience
 {
-    Write-Status "Configuring Desktop..."
+    Write-Host "`  * Configuring Desktop experience" -NoNewLine
 
     # show file extensions, hidden items and disable item checkboxes
     $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
@@ -128,11 +147,8 @@ Function Optimize-DesktopExperience
     Set-ItemProperty "HKLM:\Software\Microsoft\ServerManager" CheckUnattendLaunchSetting 0
     Set-ItemProperty "HKLM:\Software\Microsoft\ServerManager\Oobe" DoNotOpenInitialConfigurationTasksAtLogon 1
 
-    # Remove GCE BGInfo background setter
-    Remove-Item -Force (Join-Path (Get-SpecialFolder CommonStartup) "BGInfo.lnk")
-
     # Don't prompt for network location
-    New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff" -Force
+    New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Network\NewNetworkWindowOff" -Force | Out-Null
 
     # Enable Enhanced Pointer Precision
     Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
@@ -142,16 +158,17 @@ Function Optimize-DesktopExperience
     # Disabling Logout Option in Start Menu
     # Set-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" StartMenuLogOff 1
 
-    Write-Output "Setting Time to Automatic..."
     Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
     Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
+    Write-Host "`  - Success!"
 }
 
 Function Register-Scripts
 {
-    if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup -ItemType directory | Out-Null}
-    if((Test-Path -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown) -eq $true) {} Else {New-Item -Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown -ItemType directory | Out-Null}
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
+    Write-Host "`  * Registering scripts" -NoNewLine
+    if((Test-Path -Path "C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup") -eq $true) {} Else { New-Item -Path "C:\Windows\system32\GroupPolicy\Machine\Scripts\Startup" -ItemType directory | Out-Null}
+    if((Test-Path -Path "C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown") -eq $true) {} Else { New-Item -Path "C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown" -ItemType directory | Out-Null}
+    if((Test-Path -Path "C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini") -eq $true) {} Else { Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\psscripts.ini" -Destination "C:\Windows\system32\GroupPolicy\Machine\Scripts"}
 
 
     # Update GPO if needed
@@ -180,22 +197,24 @@ Function Register-Scripts
     }
 
     # Register a shutdown script that
-    if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\psscripts.ini) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\psscripts.ini -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts}
     if((Test-Path C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown\NetworkRestore.ps1) -eq $true) {} Else {Move-Item -Path $global:CloudRIGInstallBaseDir\Resources\NetworkRestore.ps1 -Destination C:\Windows\system32\GroupPolicy\Machine\Scripts\Shutdown}
     regedit /s $global:CloudRIGInstallBaseDir\Resources\NetworkRestore.reg
 
     regedit /s $global:CloudRIGInstallBaseDir\Resources\ForceCloseShutDown.reg
 
     New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
+
+    Write-Host "`  - Success!"
 }
 
 Function Enable-ForceCloseApps
 {
+    Write-Host "`  * Enable force close apps..." -NoNewLine
     if (((Get-Item -Path "HKCU:\Control Panel\Desktop").GetValue("AutoEndTasks") -ne $null) -eq $true) {
-        Set-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"
-        Write-Host "Removed Startup Item from Razer Synapse"
+        Set-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1" | Out-Null
     }
     Else {
-        New-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1"
+        New-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1" | Out-Null
     }
+    Write-Host "`  - Success!"
 }

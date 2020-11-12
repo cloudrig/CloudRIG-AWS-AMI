@@ -70,6 +70,15 @@ Resources:
                   - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}/*'
                   - 'arn:aws:s3:::nvidia-gaming'
                   - 'arn:aws:s3:::nvidia-gaming/*'
+        - PolicyName: allow-nice-dcv-license-check
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::dcv-license.${AWS::Region}/*'
         - PolicyName: allow-to-log
           PolicyDocument:
             Version: 2012-10-17
@@ -289,6 +298,20 @@ Resources:
               PropertySelector: "$.InstanceStatuses[0].InstanceState.Name"
               DesiredValues:
                 - running
+
+          # Install the EC2Launch V2 in order to have prepackaged scripts to init the ephemeral drives
+          - name: InstallEC2LaunchV2
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:CancelSpotRequest"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWSEC2Launch-RunMigration
+              InstanceIds:
+                - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
 
           # As the scripts can only be executed through RDP (as the session needs to be opened), we wait here for the
           # confirmation that the tools has been manually installed.

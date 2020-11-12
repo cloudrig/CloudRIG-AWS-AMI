@@ -1,10 +1,10 @@
 # CloudRIG - Main installer
 
-Import-Module "$PSScriptRoot\InstallModules\UtilsAppInstaller"
-Import-Module "$PSScriptRoot\InstallModules\ConfigureWindowsForGaming"
-Import-Module "$PSScriptRoot\InstallModules\GamingAppInstaller"
-Import-Module "$PSScriptRoot\InstallModules\GPUPreparation"
-Import-Module "$PSScriptRoot\InstallModules\CloudProviderSpecificSetup"
+Import-Module "$PSScriptRoot\InstallModules\UtilsAppInstaller"  -Force
+Import-Module "$PSScriptRoot\InstallModules\ConfigureWindowsForGaming" -Force
+Import-Module "$PSScriptRoot\InstallModules\GamingAppInstaller" -Force
+Import-Module "$PSScriptRoot\InstallModules\GPUPreparation" -Force
+Import-Module "$PSScriptRoot\InstallModules\CloudProviderSpecificSetup" -Force
 
 Function Install-EntryPoint
 {
@@ -24,7 +24,10 @@ Function Install-EntryPoint
 }
 
 Function Install-Env {
-    if((Test-Path -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader) -eq $true) {} Else {New-Item -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader -ItemType directory | Out-Null}
+    if((Test-Path -Path "$env:USERPROFILE\AppData\Roaming\CloudRIGLoader") -eq $true) {} Else {New-Item -Path $env:USERPROFILE\AppData\Roaming\CloudRIGLoader -ItemType directory | Out-Null}
+    if((Test-Path -Path "$global:CloudRIGInstallBaseDir\Apps") -eq $true) {} Else {New-Item -Path "$global:CloudRIGInstallBaseDir\Apps" -ItemType directory | Out-Null}
+    if((Test-Path -Path "$global:CloudRIGInstallBaseDir\Drivers") -eq $true) {} Else {New-Item -Path "$global:CloudRIGInstallBaseDir\Drivers" -ItemType directory | Out-Null}
+
 }
 
 Function Remove-Env {
