@@ -4,7 +4,7 @@ This repository contains the tool used to generated the CloudRIG AWS AMIs.
 
 ## Usage
 
-You can use the CloudRIG AMIs without the graphical interface. 
+You can use the CloudRIG AMIs without the desktop app. 
 
 For the moment the AMI is only published in eu-west-1 (Ireland). 
 
@@ -34,6 +34,14 @@ You can workaround this by defining your own custom password using SSM and `Run-
 ```
 net user Administrator "new_password"
 ``` 
+
+**Access the istance through DCV**
+You can remote control (and even play) using the browser-based NICE DCV app. 
+```
+https://<ec2-instance-public-domain>:8443/
+```
+Then use the Windows credentials to connect. 
+
 
 ## Included
   * NICE DCV / Parsec / Rainway
