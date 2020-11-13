@@ -205,13 +205,14 @@ Function Install-DevCon
 Function Install-PicoTorrent
 {
     Write-Host "  * PicoTorrent" -NoNewline
-    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/picotorrent/PicoTorrent-0.23.0-x64.exe	" -LocalFile "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" | Out-Null
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/picotorrent/PicoTorrent-0.23.0-x64.exe" -LocalFile "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" | Out-Null
     Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" -ArgumentList '/install','/quiet','/norestart' -wait | Out-Null
     Write-Host "`  - Success!"
 }
 
 Function Copy-CloudRIGScripts {
     Write-Host "`  * CloudRIG Helper scripts" -NoNewline
+    if((Test-Path -Path "C:\CloudRIG\Scripts") -eq $true) {} Else {New-Item -Path "C:\CloudRIG\Scripts" -ItemType Directory | Out-Null}
     if((Test-Path -Path "$ENV:APPDATA\CloudRIGLoader") -eq $true) {} Else {New-Item -Path "$ENV:APPDATA\CloudRIGLoader" -ItemType Directory | Out-Null}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\clear-proxy.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\clear-proxy.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateClearProxyScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\CreateClearProxyScheduledTask.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
@@ -223,6 +224,10 @@ Function Copy-CloudRIGScripts {
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\ShowDialog.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\ShowDialog.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\OneHour.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\OneHour.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\PrepareInstanceOnStartup.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\PrepareInstanceOnStartup.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
+
+    # Copy the instance init scripts
+    Copy-Item -Recurse -Force "$global:CloudRIGInstallBaseDir\Resources\InstanceInitScripts\" "C:\CloudRIG\Scripts\InstanceInitScripts\"
+
     Write-Host "`  - Success!"
 }
 

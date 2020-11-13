@@ -434,7 +434,7 @@ Resources:
             timeoutSeconds: 60
             onFailure: "step:CancelSpotRequest"
             inputs:
-              Runtime: python3.8
+              Runtime: python3.7
               Handler: copyImageInAllRegions
               InputPayload:
                 ImageId: "{{ CreateImage.ImageId }}"

@@ -79,16 +79,34 @@ Function Install-CloudProviderSpecificSetup
 }
 
 Function Install-AWSSetup {
-    Write-Host "Running on AWS"
+    Write-Host "Running on AWSddddd"
 
-    Write-Host "` * Configure EC2Launch to init drives and change wallpaper" -NoNewLine
+    Write-Host "` * Configure EC2Launch to init drives, change wallpaper, optimize ENA and run startup scripts..." -NoNewLine
     $config = & "C:\Program Files\Amazon\EC2Launch\EC2Launch.exe" get-agent-config --format json | ConvertFrom-Json
-    $initVolumes = @{}
-    $initVolumes["task"] = "initializeVolume"
-    $initVolumes["inputs"] = @{}
-    $initVolumes["inputs"]["initialize"] = "all"
+    $config
+    $initVolumes = @{
+        "task" = "initializeVolume";
+        "inputs" = @{
+            "initialize" = "all"
+        };
+    }
+    $optimizeEna = @{"task" = "optimizeEna"};
+    $startupScripts = @{
+        "task" = "executeProgram";
+        "inputs" = [array]@(
+            @{
+                "frequency" = "always";
+                "path" = "powershell.exe";
+                "runAs" = "localSystem";
+                "arguments" = [array]@("-WindowStyle","hidden","-ExecutionPolicy","Bypass","-File","C:\CloudRIG\Scripts\InstanceInitScripts\Init-Instance.ps1");
+            }
+        )
+    }
+
     $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $initVolumes}}
-    $config | ConvertTo-Json -Depth 6 | Out-File -encoding UTF8 $env:ProgramData/Amazon/EC2Launch/config/agent-config.yml
+    $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $optimizeEna}}
+    $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $startupScripts}}
+    ConvertTo-Json -InputObject $config -Depth 10 | Out-File -encoding UTF8 "$env:ProgramData/Amazon/EC2Launch/config/agent-config.yml"
     Write-Host "` - Success"
 }
 

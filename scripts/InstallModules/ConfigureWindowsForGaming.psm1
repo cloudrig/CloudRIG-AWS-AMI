@@ -17,6 +17,8 @@ Function Install-ConfigurationWindowsForGaming
     Register-Scripts
     Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Enable force close apps" -PercentComplete 95
     Enable-ForceCloseApps
+    Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Rename computer" -PercentComplete 95
+    Rename-CloudRIGComputer
     Write-Progress -Activity "Configuring Windows for Gaming..." -CurrentOperation "Done" -PercentComplete 100
 }
 
@@ -41,7 +43,7 @@ Function Enable-Audio
     Write-Host "`  - Success!"
 }
 
-# Copied from https://github.com/putty182/gcloudrig/
+# Extracted from https://github.com/putty182/gcloudrig/. Thanks a lot!
 Function Optimize-ForGamingPerformance
 {
     Write-Host "`  * Tuning Windows settings to optimise gaming experience" -NoNewLine
@@ -115,7 +117,7 @@ Function Optimize-ForGamingPerformance
     Write-Host "`  - Success!"
 }
 
-# Copied from https://github.com/putty182/gcloudrig/
+# Extracted from https://github.com/putty182/gcloudrig/. Thanks a lot!
 Function Optimize-DesktopExperience
 {
     Write-Host "`  * Configuring Desktop experience" -NoNewLine
@@ -153,10 +155,11 @@ Function Optimize-DesktopExperience
     # Enable Enhanced Pointer Precision
     Set-Itemproperty -Path 'HKCU:\Control Panel\Mouse' -Name MouseSpeed -Value 1 | Out-Null
 
-    # Disabling Shutdown Option in Start Menu
-    # Set-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" NoClose 1
-    # Disabling Logout Option in Start Menu
-    # Set-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" StartMenuLogOff 1
+    # disable password complexity (so people can choose whatever password they want)
+    secedit /export /cfg "c:\secpol.cfg" | Out-Null
+    (Get-Content "c:\secpol.cfg").replace("PasswordComplexity = 1", "PasswordComplexity = 0") | Out-File "c:\secpol.cfg"
+    secedit /configure /db c:\windows\security\local.sdb /cfg "c:\secpol.cfg" /areas SECURITYPOLICY | Out-Null
+    Remove-Item -Force "c:\secpol.cfg" -Confirm:$false | Out-Null
 
     Set-ItemProperty -path HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters -Name Type -Value NTP | Out-Null
     Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Services\tzautoupdate -Name Start -Value 00000003 | Out-Null
@@ -217,4 +220,8 @@ Function Enable-ForceCloseApps
         New-ItemProperty -path "HKCU:\Control Panel\Desktop" -Name "AutoEndTasks" -Value "1" | Out-Null
     }
     Write-Host "`  - Success!"
+}
+
+Function Rename-CloudRIGComputer {
+    Rename-Computer -NewName "CloudRIG"
 }
