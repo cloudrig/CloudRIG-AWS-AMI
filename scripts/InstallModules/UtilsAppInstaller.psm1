@@ -214,8 +214,6 @@ Function Copy-CloudRIGScripts {
     Write-Host "`  * CloudRIG Helper scripts" -NoNewline
     if((Test-Path -Path "C:\CloudRIG\Scripts") -eq $true) {} Else {New-Item -Path "C:\CloudRIG\Scripts" -ItemType Directory | Out-Null}
     if((Test-Path -Path "$ENV:APPDATA\CloudRIGLoader") -eq $true) {} Else {New-Item -Path "$ENV:APPDATA\CloudRIGLoader" -ItemType Directory | Out-Null}
-    if((Test-Path $ENV:APPDATA\CloudRIGLoader\clear-proxy.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\clear-proxy.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
-    if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateClearProxyScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\CreateClearProxyScheduledTask.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\Automatic-Shutdown.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\Automatic-Shutdown.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\CreateAutomaticShutdownScheduledTask.ps1) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\CreateAutomaticShutdownScheduledTask.ps1" -Destination $ENV:APPDATA\CloudRIGLoader}
     if((Test-Path $ENV:APPDATA\CloudRIGLoader\GPU-Update.ico) -eq $true) {} Else {Move-Item -Path "$global:CloudRIGInstallBaseDir\Resources\GPU-Update.ico" -Destination $ENV:APPDATA\CloudRIGLoader}
