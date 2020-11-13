@@ -106,8 +106,6 @@ Function Optimize-ForGamingPerformance
     "SharedAccess"                             # Internet Connection Sharing (ICS)
     "TrkWks"                                   # Distributed Link Tracking Client
     "WbioSrvc"                                 # Windows Biometric Service
-    "LanmanServer"                             # File/Printer sharing
-    "Spooler"                                  # Printing stuff
     "RemoteAccess"                             # Routing and Remote Access
     )
     foreach ($service in $services) {
