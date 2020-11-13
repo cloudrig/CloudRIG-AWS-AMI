@@ -4,33 +4,35 @@ Import-Module "$PSScriptRoot\Common"
 
 Function Install-UtilsApp {
     Write-Host "Installing utils applications..."
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Prepare (1/13)" -PercentComplete 0
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Prepare (1/14)" -PercentComplete 0
     if((Test-Path -Path $global:CloudRIGInstallBaseDir\Apps) -eq $true) {} Else {New-Item -Path $global:CloudRIGInstallBaseDir\Apps -ItemType directory | Out-Null}
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Chocolatey (2/13)" -PercentComplete 2
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Chocolatey (2/14)" -PercentComplete 2
     Install-Chocolatey
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "OpenSSL (3/13)" -PercentComplete 7
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "OpenSSL (3/14)" -PercentComplete 7
     Install-OpenSSL
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "CloudRIG GPU updater tool (4/13)" -PercentComplete 10
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "CloudRIG GPU updater tool (4/14)" -PercentComplete 10
     Install-GPUUpdater
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "7Zip (5/13)" -PercentComplete 15
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "7Zip (5/14)" -PercentComplete 15
     Install-7Zip
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "DirectX (6/13)" -PercentComplete 19
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "DirectX (6/14)" -PercentComplete 19
     Install-DirectX
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "VCRedist (7/13)" -PercentComplete 25
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "VCRedist (7/14)" -PercentComplete 25
     Install-VCRedist
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Google Chrome (8/13)" -PercentComplete 35
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Google Chrome (8/14)" -PercentComplete 35
     Install-GoogleChrome
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "VB Cable (9/13)" -PercentComplete 45
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "VB Cable (9/14)" -PercentComplete 45
     Install-VBCable
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Razer Surround (9/13)" -PercentComplete 55
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Razer Surround (9/14)" -PercentComplete 55
     Install-RazerSurround
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "DevCon (10/13)" -PercentComplete 60
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "DevCon (10/14)" -PercentComplete 60
     Install-DevCon
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Controller support (11/13)" -PercentComplete 63
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "PicoTorrent (11/14)" -PercentComplete 62
+    Install-PicoTorrent
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Controller support (12/14)" -PercentComplete 70
     Install-ControllerDriver
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Windows features (12/13)" -PercentComplete 65
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "Windows features (13/14)" -PercentComplete 76
     Enable-WindowsFeatures
-    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "CloudRIG helper tools (13/13)" -PercentComplete 90
+    Write-Progress -Activity "Installing utils applications..." -CurrentOperation "CloudRIG helper tools (14/14)" -PercentComplete 90
     Copy-CloudRIGScripts
     Install-AutoShutdownShortcut
     Install-OneHourWarningShortcut
@@ -197,6 +199,14 @@ Function Install-DevCon
     Write-Host "`  * Devcon..." -NoNewline
     if((Test-Path -Path "$global:CloudRIGInstallBaseDir\Devcon") -eq $true) {} Else {New-Item -Path "$global:CloudRIGInstallBaseDir\Devcon" -ItemType Directory | Out-Null}
     Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/microsoft/devcon.exe" -LocalFile "$global:CloudRIGInstallBaseDir\Devcon\devcon.exe" | Out-Null
+    Write-Host "`  - Success!"
+}
+
+Function Install-PicoTorrent
+{
+    Write-Host "  * PicoTorrent" -NoNewline
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/picotorrent/PicoTorrent-0.23.0-x64.exe	" -LocalFile "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" | Out-Null
+    Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" -ArgumentList '/install','/quiet','/norestart' -wait | Out-Null
     Write-Host "`  - Success!"
 }
 
