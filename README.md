@@ -26,6 +26,14 @@ You instance profile should at least contains the Amazon SSM access and the foll
 }
 ```
 
+**Windows password not pushed to the console**
+
+There is something in the current version that is blocking the generated windows password push to the AWS Console. 
+You can workaround this by defining your own custom password using SSM and `Run-PowerShellScript` command: 
+
+```
+net user Administrator "new_password"
+``` 
 
 ## Included
   * NICE DCV / Parsec / Rainway
