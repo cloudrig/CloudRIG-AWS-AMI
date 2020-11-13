@@ -431,7 +431,7 @@ Resources:
 
           - name: CopyImageInRegions
             action: aws:executeScript
-            timeoutSeconds: 60
+            timeoutSeconds: 3600
             onFailure: "step:CancelSpotRequest"
             inputs:
               Runtime: python3.7
