@@ -79,7 +79,7 @@ Function Install-CloudProviderSpecificSetup
 }
 
 Function Install-AWSSetup {
-    Write-Host "Running on AWSddddd"
+    Write-Host "Running on AWS"
 
     Write-Host "` * Configure EC2Launch to init drives, change wallpaper, optimize ENA and run startup scripts..." -NoNewLine
     $config = & "C:\Program Files\Amazon\EC2Launch\EC2Launch.exe" get-agent-config --format json | ConvertFrom-Json
@@ -89,7 +89,6 @@ Function Install-AWSSetup {
             "initialize" = "all"
         };
     }
-    $optimizeEna = @{"task" = "optimizeEna"};
     $startupScripts = @{
         "task" = "executeProgram";
         "inputs" = [array]@(
@@ -103,7 +102,6 @@ Function Install-AWSSetup {
     }
 
     $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $initVolumes}}
-    $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $optimizeEna}}
     $config.config | %{if($_.stage -eq 'postReady'){$_.tasks += $startupScripts}}
     ConvertTo-Json -InputObject $config -Depth 10 | Out-File -encoding UTF8 "$env:ProgramData/Amazon/EC2Launch/config/agent-config.yml"
     Write-Host "` - Success"
