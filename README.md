@@ -59,3 +59,16 @@ Then use the Windows credentials to connect.
   * .NET Framework
   * Direct Play
   
+## Troubleshooting
+
+### My instance does not show up in the SSM console
+
+Please ensure that the `AmazonSSMManagedInstanceCore` is attached to your EC2 instance profile role. 
+
+## Debug
+
+### Startup scripts logs 
+
+You can find the EC2 Launch v2 logs here `C:\Program Files\Amazon\EC2Launch\logs`.
+
+You can find the CloudRIG startup scripts logs here `C:\CloudRIG\Logs\`. 
