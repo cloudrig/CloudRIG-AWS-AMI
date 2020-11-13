@@ -83,7 +83,6 @@ Function Install-AWSSetup {
 
     Write-Host "` * Configure EC2Launch to init drives, change wallpaper, optimize ENA and run startup scripts..." -NoNewLine
     $config = & "C:\Program Files\Amazon\EC2Launch\EC2Launch.exe" get-agent-config --format json | ConvertFrom-Json
-    $config
     $initVolumes = @{
         "task" = "initializeVolume";
         "inputs" = @{

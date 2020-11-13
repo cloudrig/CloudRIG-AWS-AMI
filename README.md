@@ -11,11 +11,6 @@ For the moment the AMI is only published in eu-west-1 (Ireland).
 You MUST use a g4dn.xlarge instance to run the AMI correctly (as the drivers installed only matches the g4 graphic cards).
 Average spot price as of 2020-11-13 is ~$0.36 which is the better balance between price and performances.  
 
-AMI Name (Community AMI)
-```
-cloudrig-win19full-1.0-g4dn.xlarge-2020-11-13_15.16.18
-```
-
 You instance profile should at least contains the Amazon SSM access and the following permissions : 
 ```
 {
