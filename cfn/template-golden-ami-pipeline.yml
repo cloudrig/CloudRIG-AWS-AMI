@@ -469,7 +469,7 @@ Resources:
                     # Share it to the world
                     print(f'Sharing to the world the image {images_per_region.get(region)} in region {region}...')
                     ec2.modify_image_attribute(
-                        ImageId=image_id,
+                        ImageId=images_per_region.get(region),
                         LaunchPermission={
                             'Add': [
                                 {
