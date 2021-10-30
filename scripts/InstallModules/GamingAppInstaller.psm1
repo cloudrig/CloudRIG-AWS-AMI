@@ -52,7 +52,7 @@ Function Install-Rainway {
 
 Function Install-NICEDCV {
     Write-Host "`  * NICE DCV" -NoNewline
-    (New-Object System.Net.WebClient).DownloadFile("https://d1uj6qtbmh3dt5.cloudfront.net/2020.1/Servers/nice-dcv-server-x64-Release-2020.1-9012.msi", "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi")
+    (New-Object System.Net.WebClient).DownloadFile("https://d1uj6qtbmh3dt5.cloudfront.net/2021.2/Servers/nice-dcv-server-x64-Release-2021.2-11190.msi", "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi")
     Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi" -ArgumentList '/quiet','/norestart','/l*v', 'dcv_install_msi.log' -wait
     Write-host "`  - Success!"
 
