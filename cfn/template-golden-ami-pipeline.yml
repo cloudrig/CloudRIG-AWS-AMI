@@ -70,6 +70,8 @@ Resources:
                   - !Sub 'arn:aws:s3:::aws-ssm-downloads-${AWS::Region}/*'
                   - 'arn:aws:s3:::nvidia-gaming'
                   - 'arn:aws:s3:::nvidia-gaming/*'
+                  - 'arn:aws:s3:::ec2-amd-windows-drivers'
+                  - 'arn:aws:s3:::ec2-amd-windows-drivers/*'
         - PolicyName: allow-nice-dcv-license-check
           PolicyDocument:
             Version: 2012-10-17
@@ -165,7 +167,7 @@ Resources:
   #
   #
 
-  BuildAMISSMAutomation:
+  BuildAMISpotSSMAutomation:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
@@ -257,7 +259,7 @@ Resources:
           - name: SleepForSpotRequestFullfill
             action: aws:sleep
             inputs:
-              Duration: PT30S
+              Duration: PT2M
 
           - name: LaunchInstanceAsSpotDetails
             action: aws:executeAwsApi
@@ -498,6 +500,313 @@ Resources:
             inputs:
               InstanceIds:
                 - "{{ LaunchInstanceAsSpotDetails.InstanceId }}"
+              DesiredState: terminated
+
+        outputs:
+          - CreateImage.ImageId
+
+  BuildAMIOnDemandSSMAutomation:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Tags:
+        - Key: cloudrig
+          Value: 'true'
+      Content:
+        schemaVersion: '0.3'
+        description: CloudRIG - AMI building pipeline automation (on demand)
+        assumeRole: "{{ AutomationAssumeRole }}"
+        parameters:
+          ArtefactsS3BucketName:
+            type: String
+            description: "Specify the SubnetId if you want to launch into a specific subnet."
+            default: !Ref "ArtefactsS3BucketName"
+          Version:
+            type: String
+            description: "Specify the version that you want to build"
+            default: !Ref "Version"
+          SourceAmiId:
+            type: String
+            description: "The source AMI ID."
+            default: "{{ssm:/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base}}"
+          SourceOSName:
+            type: String
+            description: "The source AMI OS short name"
+            default: "win19full"
+          IamInstanceProfileName:
+            type: String
+            description: "The name of the role that enables Systems Manager to manage the instance."
+            default: !Ref BuildAMIInstanceProfile
+          AutomationAssumeRole:
+            type: String
+            description: "The ARN of the role that allows Automation to perform the actions on your behalf."
+            default: !GetAtt BuildAMIAutomationServiceRole.Arn
+          InstanceType:
+            type: String
+            description: "Type of instance to launch as the workspace host. Instance types vary by region. Default is g4dn.xlarge."
+            default: g4dn.xlarge
+          KeyPairName:
+            type: String
+            description: "The KeyPair to associate to the build instance"
+            default: !Ref KeyPairName
+          SubnetId:
+            type: String
+            description: "Specify the SubnetId if you want to launch into a specific subnet."
+            default: !Ref SubnetId
+          SecurityGroupId:
+            type: String
+            description: "Specify the SecurityGroupId for the instance"
+            default: !Ref SecurityGroupId
+          AdditionalTargetRegions:
+            type: StringList
+            description: "The list of regions where the image should be copied"
+            minItems: 0
+            default: ["eu-west-3"]
+          CommandOutputLogGroupName:
+            type: String
+            description: "The name of the log group that will aggregate the build logs"
+            default: !Ref BuildAMILogs
+        mainSteps:
+          - name: LaunchInstance
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 1
+            onFailure: Abort
+            inputs:
+              Service: ec2
+              Api: RunInstances
+              MinCount: 1
+              MaxCount: 1
+              ImageId: "{{ SourceAmiId }}"
+              InstanceType: "{{ InstanceType }}"
+              IamInstanceProfile:
+                Name: "{{ IamInstanceProfileName }}"
+              KeyName: "{{ KeyPairName }}"
+              SubnetId: "{{ SubnetId }}"
+              SecurityGroupIds:
+                - "{{ SecurityGroupId }}"
+              BlockDeviceMappings:
+                - DeviceName: "/dev/sdc"
+                  VirtualName: "ephemeral0"
+              InstanceInitiatedShutdownBehavior: "terminate"
+            outputs:
+              - Name: InstanceId
+                Selector: "$.Instances[0].InstanceId"
+                Type: String
+
+          - name: WaitForInstanceReady
+            action: aws:waitForAwsResourceProperty
+            timeoutSeconds: 300
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Service: ec2
+              Api: DescribeInstanceStatus
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+              PropertySelector: "$.InstanceStatuses[0].InstanceState.Name"
+              DesiredValues:
+                - running
+
+          - name: AssertInstanceStateRunning
+            action: aws:assertAwsResourceProperty
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Service: ec2
+              Api: DescribeInstanceStatus
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+              PropertySelector: "$.InstanceStatuses[0].InstanceState.Name"
+              DesiredValues:
+                - running
+
+          # Install the EC2Launch V2 in order to have prepackaged scripts to init the ephemeral drives
+          - name: InstallEC2LaunchV2
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWSEC2Launch-RunMigration
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+
+          # As the scripts can only be executed through RDP (as the session needs to be opened), we wait here for the
+          # confirmation that the tools has been manually installed.
+          - name: ApproveInstallationScriptFinished
+            action: aws:approve
+            onFailure: "step:TerminateInstance"
+            isCritical: false
+            timeoutSeconds: 3600
+            inputs:
+              Message: Please install the CloudRIG tools before approving
+              MinRequiredApprovals: 1
+              Approvers:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/role-cloudrig-admin"
+
+          # Reboot to take into account the changes
+          - name: RebootForInstallationScriptFinished
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 1
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Service: ec2
+              Api: RebootInstances
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+            outputs:
+              - Name: RequestId
+                Selector: "$.SpotInstanceRequests[0].SpotInstanceRequestId"
+                Type: String
+          - name: SleepToWaitForReboot
+            action: aws:sleep
+            inputs:
+              Duration: PT30S
+
+          # Sysprep the instance
+          - name: RunSysprepGeneralize
+            action: aws:runCommand
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            timeoutSeconds: 600
+            inputs:
+              DocumentName: AWSEC2-RunSysprep
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+              CloudWatchOutputConfig:
+                CloudWatchLogGroupName: "{{ CommandOutputLogGroupName }}"
+                CloudWatchOutputEnabled: true
+              Parameters:
+                Id: "{{automation:EXECUTION_ID}}"
+
+          - name: StopInstance
+            action: aws:changeInstanceState
+            maxAttempts: 3
+            timeoutSeconds: 7200
+            onFailure: "step:TerminateInstance"
+            inputs:
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
+              CheckStateOnly: false
+              DesiredState: stopped
+
+          - name: CreateImage
+            action: aws:createImage
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            inputs:
+              InstanceId: "{{ LaunchInstance.InstanceId }}"
+              ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE_TIME }}"
+              NoReboot: false
+              ImageDescription: !Sub "CloudRIG gaming image for {{ InstanceType }} based on {{ SourceOSName }} v${Version}"
+
+          - name: CreateTagsForImage
+            action: aws:createTags
+            maxAttempts: 1
+            onFailure: "step:TerminateInstance"
+            inputs:
+              ResourceType: EC2
+              ResourceIds:
+                - "{{ CreateImage.ImageId }}"
+              Tags:
+                - Key: cloudrig:ami:automation:id
+                  Value: "{{ automation:EXECUTION_ID }}"
+                - Key: cloudrig:ami:automation:execution-time
+                  Value: "{{ global:DATE_TIME }}"
+                - Key: cloudrig:ami:source-ami-id
+                  Value: "{{ SourceAmiId }}"
+                - Key: cloudrig:ami:compatibility:instance-type
+                  Value: "{{ InstanceType }}"
+                - Key: cloudrig:ami:compatibility:os
+                  Value: "{{ SourceOSName }}"
+
+          - name: VerifyImageAvailability
+            action: aws:waitForAwsResourceProperty
+            timeoutSeconds: 600
+            inputs:
+              Service: ec2
+              Api: DescribeImages
+              ImageIds:
+                - "{{ CreateImage.ImageId }}"
+              PropertySelector: "$.Images[0].State"
+              DesiredValues:
+                - available
+
+          - name: ShareAMIToTheWorld
+            action: aws:executeAwsApi
+            timeoutSeconds: 30
+            maxAttempts: 3
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Service: ec2
+              Api: ModifyImageAttribute
+              ImageId: "{{ CreateImage.ImageId }}"
+              LaunchPermission:
+                Add:
+                  - Group: all
+
+          - name: CopyImageInRegions
+            action: aws:executeScript
+            timeoutSeconds: 3600
+            onFailure: "step:TerminateInstance"
+            inputs:
+              Runtime: python3.7
+              Handler: copyImageInAllRegions
+              InputPayload:
+                ImageId: "{{ CreateImage.ImageId }}"
+                ImageName: "cloudrig-{{ SourceOSName }}-{{ Version }}-{{ InstanceType }}-{{ global:DATE_TIME }}"
+                Regions: "{{ AdditionalTargetRegions }}"
+              Script: |-
+                import boto3
+                def copyImageInAllRegions(events,context):
+                  newImageId = events['ImageId']
+                  newImageName = events['ImageName']
+
+                  images_per_region = {}
+
+                  for region in events['Regions']:
+                    #Initialize client
+                    ec2 = boto3.client('ec2', region_name=region)
+
+                    # Copy the AMI
+                    print(f'Copying in region {region}...')
+                    images_per_region[region] = ec2.copy_image(
+                      Name=newImageName,
+                      SourceImageId=newImageId,
+                      SourceRegion='eu-west-1'
+                    ).get('ImageId')
+
+                  for region in events['Regions']:
+                    # Wait for image to be ready
+                    ec2 = boto3.client('ec2', region_name=region)
+                    print(f'Waiting for image {images_per_region.get(region)} in region {region}...')
+                    ec2.get_waiter('image_available').wait(ImageIds=[images_per_region.get(region)])
+
+                    # Share it to the world
+                    print(f'Sharing to the world the image {images_per_region.get(region)} in region {region}...')
+                    ec2.modify_image_attribute(
+                        ImageId=images_per_region.get(region),
+                        LaunchPermission={
+                            'Add': [
+                                {
+                                    'Group': 'all'
+                                }
+                            ]
+                        }
+                    )
+
+          - name: TerminateInstance
+            action: aws:changeInstanceState
+            maxAttempts: 3
+            onFailure: Abort
+            isEnd: true
+            inputs:
+              InstanceIds:
+                - "{{ LaunchInstance.InstanceId }}"
               DesiredState: terminated
 
         outputs:
