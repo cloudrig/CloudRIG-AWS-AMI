@@ -38,9 +38,10 @@ Server 2016
 Server 2019
                     
 ### CLOUD SKU:
-AWS G3.4xLarge    (Tesla M60)  
-AWS G2.2xLarge    (GRID K520)  
-AWS G4dn.xLarge   (Tesla T4 with vGaming driver)  
+AWS g3.4xlarge    (Tesla M60)  
+AWS g2.2xlarge    (GRID K520)  
+AWS g4dn.xlarge   (Tesla T4 with vGaming driver)  
+AWS g4ad.xlarge   (AMD V520)
 Azure NV6         (Tesla M60)  
 Paperspace P4000  (Quadro P4000)  
 Paperspace P5000  (Quadro P5000)  

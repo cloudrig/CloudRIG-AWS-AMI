@@ -65,6 +65,19 @@ Function Install-CloudProviderSpecificSetup
             Install-AWSSetup
         }
 
+        Elseif($devicename -eq "DEV_1EB8")
+        {
+            #Tesla T4 - AWS g4dn.xLarge
+            Write-Output "Tesla T4 Detected"
+            Install-AWSSetup
+        }
+
+        Elseif($gputype.substring(13,8) -eq "DEV_7362") {
+            # AMD V520 - AWS g4ad.xLarge
+            Write-Output "AMD V520 Detected"
+            Install-AWSSetup
+        }
+
         Elseif($devicename -eq "DEV_1430")
         {
             Write-Output "Quadro M2000 Detected"
