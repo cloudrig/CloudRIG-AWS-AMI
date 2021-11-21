@@ -205,7 +205,7 @@ Function Install-DevCon
 Function Install-PicoTorrent
 {
     Write-Host "  * PicoTorrent" -NoNewline
-    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/picotorrent/PicoTorrent-0.23.0-x64.exe" -LocalFile "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" | Out-Null
+    Copy-S3Object -BucketName "cloudrig-amifactory" -Key "vendor/picotorrent/PicoTorrent-0.25.0-x64.exe" -LocalFile "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" | Out-Null
     Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\PicoTorrent-x64.exe" -ArgumentList '/install','/quiet','/norestart' -wait | Out-Null
     Write-Host "`  - Success!"
 }
