@@ -53,7 +53,7 @@ Function Install-Rainway {
 Function Install-NICEDCV {
     Write-Host "`  * NICE DCV" -NoNewline
     (New-Object System.Net.WebClient).DownloadFile("https://d1uj6qtbmh3dt5.cloudfront.net/2021.2/Servers/nice-dcv-server-x64-Release-2021.2-11190.msi", "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi")
-    Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi" -ArgumentList '/quiet','/norestart','/l*v', 'dcv_install_msi.log' -wait
+    Start-Process -FilePath "$global:CloudRIGInstallBaseDir\Apps\nice-dcv-server-x64-Release.msi" -ArgumentList 'ADDLOCAL=ALL', '/quiet','/norestart','/l*v', 'dcv_install_msi.log' -wait
     Write-host "`  - Success!"
 
     # Install a wildcard self-signed certificate for all EC2 instances
@@ -63,6 +63,38 @@ Function Install-NICEDCV {
     Start-Process -FilePath "C:\Program Files\OpenSSL-Win64\bin\openssl.exe" -ArgumentList 'req -x509 -new -newkey rsa:4096 -nodes -subj "/C=FR/O=CloudRIG/OU=IT/CN=support@cloudrig.io" -addext "extendedKeyUsage = serverAuth" -keyout C:\Windows\System32\config\systemprofile\AppData\Local\NICE\dcv\dcv.key -out C:\Windows\System32\config\systemprofile\AppData\Local\NICE\dcv\dcv.pem' -Wait | Out-Null
     Restart-Service "DCV Server"  | Out-Null
     Write-host "`  - Success!"
+
+    # Tune DCV to make it better for gaming
+    # Based on work of ni-sp https://www.ni-sp.com/support/nice-dcv-tips-and-tricks/#h-adapt-the-dcv-image-quality-for-best-user-experience
+    Write-Host "`  * NICE DCV - Configure sessions" -NoNewLine
+    $SessionManagementKey = "Registry::HKEY_USERS\S-1-5-18\Software\GSettings\com\nicesoftware\dcv\session-management"
+    Set-ItemProperty -Path $SessionManagementKey -Name 'create-session' -Value 1 | Out-Null
+
+    $AutomaticConsoleSessionKey = "Registry::HKEY_USERS\S-1-5-18\Software\GSettings\com\nicesoftware\dcv\session-management\automatic-console-session"
+    Set-ItemProperty -Path $AutomaticConsoleSessionKey -Name 'owner' -Value 'Administrator' | Out-Null
+
+    # Enable high performances protocol (QUIC)
+    Write-Host "`  * NICE DCV - Enabling QUIC protocol" -NoNewLine
+    $ConnectivityManagementKey = "Registry::HKEY_USERS\S-1-5-18\Software\GSettings\com\nicesoftware\dcv\connectivity"
+    New-ItemProperty -Path $ConnectivityManagementKey -Name 'enable-quic-frontend' -Value 1 -PropertyType DWord | Out-Null
+
+    Write-Host "`  * NICE DCV - Configuring bandwith (max 50MB, 60fps)" -NoNewLine
+    $DisplayManagementKey = "Registry::HKEY_USERS\S-1-5-18\Software\GSettings\com\nicesoftware\dcv\display"
+    # Limit to 60 FPS
+    New-ItemProperty -Path $DisplayManagementKey -Name 'target-fps' -Value 60 -PropertyType DWord | Out-Null
+    # Max allowed bandwidth
+    New-ItemProperty -Path $DisplayManagementKey -Name 'qu-bandwidth' -Value 50 -PropertyType Dword | Out-Null
+    # Quality window (allows 30% of reduction for limited bandwidth)
+    New-ItemProperty -Path $DisplayManagementKey -Name 'quality' -Value '(70, 100)' -PropertyType String | Out-Null
+    # Frame tuning
+    New-ItemProperty -Path $DisplayManagementKey -Name 'frame-queue-weights' -Value '(8,5,1)' -PropertyType String | Out-Null
+    New-ItemProperty -Path $DisplayManagementKey -Name 'frames-in-transit' -Value '(2,8)' -PropertyType String | Out-Null
+    # Disable heatmap evaluation
+    New-ItemProperty -Path $DisplayManagementKey -Name 'enable-heatmap' -Value 0 -PropertyType Dword | Out-Null
+    # Disable the pixel-perfect quality update
+    New-ItemProperty -Path $DisplayManagementKey -Name 'enable-qu' -Value 0 -PropertyType Dword | Out-Null
+    # Disable dirty screen regions
+    New-ItemProperty -Path $DisplayManagementKey -Name 'use-grabber-dirty-region' -Value 0 -PropertyType Dword | Out-Null
 }
 
 Function Install-Steam

@@ -25,21 +25,26 @@ You instance profile should at least contains the Amazon SSM access and the foll
 }
 ```
 
-**Windows password not pushed to the console**
+### Gaming via NICE DCV
 
-There is something in the current version that is blocking the generated windows password push to the AWS Console. 
-You can workaround this by defining your own custom password using SSM and `Run-PowerShellScript` command: 
+In order to game via DCV you will need the [desktop app client](https://download.nice-dcv.com/).
 
-```
-net user Administrator "new_password"
-``` 
+Browser access may work, but it will not give good results when gaming, as it does not support QUIC protocol (UDP).
 
-**Access the istance through DCV**
-You can remote control (and even play) using the browser-based NICE DCV app. 
 ```
 https://<ec2-instance-public-domain>:8443/
 ```
-Then use the Windows credentials to connect. 
+
+Use the windows credentials to login.
+
+### Change the password without connecting
+
+You can change the password prior connection to the machine via SSM :
+https://console.aws.amazon.com/systems-manager/documents/AWS-RunPowerShellScript/description
+
+```powershell
+net user Administrator "new_password"
+```
 
 
 ## Included
